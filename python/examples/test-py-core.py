@@ -2,13 +2,13 @@
 # ===========================================
 #  -- pancake 2016
 #
-# $ r2 -I test-py-core.py -
+# $ rz -I test-py-core.py -
 # > q
 # Dont be rude
 # > ^D
 # $
 
-import r2lang
+import rzlang
 
 def pycore(a):
 	def _call(s):
@@ -25,4 +25,4 @@ def pycore(a):
 	}
 
 print("Registering Python core plugin...")
-print(r2lang.plugin("core", pycore))
+print(rzlang.plugin("core", pycore))

@@ -1,8 +1,8 @@
-/* radare - LGPL - Copyright 2016-2019 - pancake */
+/* rizin - LGPL - Copyright 2016-2019 - pancake */
 
 #include "core.h"
 
-RCore *core = NULL;
+RzCore *core = NULL;
 
 /* TODO : move into a struct stored in the plugin struct */
 static void *py_core_call_cb = NULL;
@@ -36,7 +36,7 @@ static int py_core_call(void *user, const char *str) {
 				str_res = PyBytes_AS_STRING (result);
 			}
 			if (str_res) {
-				r_cons_print (str_res);
+				rz_cons_print (str_res);
 				return 1;
 			}
 		}
@@ -44,19 +44,19 @@ static int py_core_call(void *user, const char *str) {
 	return 0;
 }
 
-void Radare_plugin_core_free(RCorePlugin *ap) {
+void Rizin_plugin_core_free(RzCorePlugin *ap) {
 	free ((char *)ap->name);
 	free ((char *)ap->license);
 	free ((char *)ap->desc);
 	free (ap);
 }
 
-PyObject *Radare_plugin_core(Radare* self, PyObject *args) {
+PyObject *Rizin_plugin_core(Rizin* self, PyObject *args) {
 	void *ptr = NULL;
 	PyObject *arglist = Py_BuildValue("(i)", 0);
 	PyObject *o = PyEval_CallObject (args, arglist);
 
-	RCorePlugin *ap = R_NEW0 (RCorePlugin);
+	RzCorePlugin *ap = RZ_NEW0 (RzCorePlugin);
 	ap->name = getS (o, "name");
 	ap->license = getS (o, "license");
 	ap->desc = getS (o, "desc");
@@ -68,10 +68,10 @@ PyObject *Radare_plugin_core(Radare* self, PyObject *args) {
 	}
 	Py_DECREF (o);
 
-	RLibStruct lp = {};
-	lp.type = R_LIB_TYPE_CORE;
+	RzLibStruct lp = {};
+	lp.type = RZ_LIB_TYPE_CORE;
 	lp.data = ap;
-	lp.free = (void (*)(void *data))Radare_plugin_core_free;
-	r_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	lp.free = (void (*)(void *data))Rizin_plugin_core_free;
+	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }

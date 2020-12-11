@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
+/* rizin - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
 
 #include "common.h"
 

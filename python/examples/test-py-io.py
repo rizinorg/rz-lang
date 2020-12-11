@@ -4,13 +4,13 @@
 #  -- pancake @ nopcode.org
 #
 # Usage:
-#   r2 -I test-py-io.py pyio://33
+#   rz -I test-py-io.py pyio://33
 #
-# The r2lang.plugin function exposes a way to register new plugins
+# The rzlang.plugin function exposes a way to register new plugins
 # into the RCore instance. This API is only available from RLang.
-# You must call with with '#!python test.py' or 'r2 -i test.py ..'
+# You must call with with '#!python test.py' or 'rz -i test.py ..'
 
-import r2lang
+import rzlang
 
 FAKESIZE = 512
 
@@ -52,4 +52,4 @@ def pyio(a):
 	}
 
 print("Registering Python IO plugin...")
-print(r2lang.plugin("io", pyio))
+print(rzlang.plugin("io", pyio))

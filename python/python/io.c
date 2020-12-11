@@ -1,17 +1,17 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* rizin - LGPL - Copyright 2009-2019 - pancake */
 
 #include "io.h"
 #include "core.h"
 
-/* r_io */
-static RIOPlugin *py_io_plugin = NULL;
+/* rz_io */
+static RzIOPlugin *py_io_plugin = NULL;
 static void *py_io_open_cb = NULL;
 static void *py_io_check_cb = NULL;
 static void *py_io_read_cb = NULL;
 static void *py_io_system_cb = NULL;
 static void *py_io_seek_cb = NULL;
 
-static RIODesc* py_io_open(RIO *io, const char *path, int rw, int mode) {
+static RzIODesc* py_io_open(RzIO *io, const char *path, int rw, int mode) {
 	if (py_io_open_cb) {
 		int fd = -1;
 		PyObject *arglist = Py_BuildValue ("(zii)", path, rw, mode);
@@ -33,12 +33,12 @@ static RIODesc* py_io_open(RIO *io, const char *path, int rw, int mode) {
 		}
 		Py_DECREF (arglist);
 		Py_DECREF (result);
-		return r_io_desc_new (io, py_io_plugin, path, rw, mode, NULL);
+		return rz_io_desc_new (io, py_io_plugin, path, rw, mode, NULL);
 	}
 	return NULL;
 }
 
-static bool py_io_check(RIO *io, const char *path, bool many) {
+static bool py_io_check(RzIO *io, const char *path, bool many) {
 	bool res = false;
 	if (py_io_check_cb) {
 		PyObject *arglist = Py_BuildValue ("(zO)", path, many?Py_True:Py_False);
@@ -49,10 +49,10 @@ static bool py_io_check(RIO *io, const char *path, bool many) {
 		Py_DECREF (arglist);
 		Py_DECREF (result);
 	}
-	return res; 
+	return res;
 }
 
-static ut64 py_io_seek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
+static ut64 py_io_seek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	if (py_io_seek_cb) {
 		PyObject *arglist = Py_BuildValue ("(Ki)", offset, whence);
 		PyObject *result = PyEval_CallObject (py_io_seek_cb, arglist);
@@ -75,7 +75,7 @@ static ut64 py_io_seek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return -1;
 }
 
-static int py_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
+static int py_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (!py_io_read_cb) {
 		return -1;
 	}
@@ -85,7 +85,7 @@ static int py_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		if (PyByteArray_Check (result)) {
 			const char *ptr = PyByteArray_AsString (result);
 			ssize_t size = PyByteArray_Size (result);
-			ssize_t limit = R_MIN (size, (ssize_t)count);
+			ssize_t limit = RZ_MIN (size, (ssize_t)count);
 			memset (buf, io->Oxff, limit);
 			memcpy (buf, ptr, limit);
 			count = (int)limit;
@@ -94,20 +94,20 @@ static int py_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			//  PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
 			ssize_t size;
 			const char *ptr = PyUnicode_AsUTF8AndSize (result, &size);
-			ssize_t limit = R_MIN (size, (ssize_t)count);
+			ssize_t limit = RZ_MIN (size, (ssize_t)count);
 			memset (buf, io->Oxff, limit);
 			memcpy (buf, ptr, limit);
 			count = (int)limit;
 		} else if (PyBytes_Check (result)) {
 			size_t size = PyBytes_Size (result);
-			size_t limit = R_MIN (size, (size_t)count);
+			size_t limit = RZ_MIN (size, (size_t)count);
 			memset (buf, io->Oxff, limit);
 			memcpy (buf, PyBytes_AS_STRING (result), limit);
 			// eprintf ("result is a string DONE %d %d\n" , count, size);
 			count = (int)limit;
 		} else if (PyList_Check (result)) {
 			int i, size = PyList_Size (result);
-			int limit = R_MIN (size, count);
+			int limit = RZ_MIN (size, count);
 			memset (buf, io->Oxff, count);
 			for (i = 0; i < limit; i++) {
 				PyObject *len = PyList_GetItem (result, i);
@@ -123,7 +123,7 @@ static int py_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	return count;
 }
 
-static char *py_io_system(RIO *io, RIODesc *desc, const char *cmd) {
+static char *py_io_system(RzIO *io, RzIODesc *desc, const char *cmd) {
 	char * res = NULL;
 	if (py_io_system_cb) {
 		PyObject *arglist = Py_BuildValue ("(z)", cmd);
@@ -134,10 +134,10 @@ static char *py_io_system(RIO *io, RIODesc *desc, const char *cmd) {
 			) {
 				res = PyBytes_AS_STRING (result);
 			} else if (PyBool_Check (result)) {
-				res = strdup (r_str_bool (result == Py_True));
+				res = strdup (rz_str_bool (result == Py_True));
 			} else if (PyLong_Check (result)) {
 				long n = PyLong_AsLong (result);
-				res = r_str_newf ("%ld", n);
+				res = rz_str_newf ("%ld", n);
 			}
 		}
 		// PyObject_Print(result, stderr, 0);
@@ -148,19 +148,19 @@ static char *py_io_system(RIO *io, RIODesc *desc, const char *cmd) {
 	return res;
 }
 
-void Radare_plugin_io_free(RIOPlugin *ap) {
+void Rizin_plugin_io_free(RzIOPlugin *ap) {
 	free ((char *)ap->name);
 	free ((char *)ap->desc);
 	free ((char *)ap->license);
 	free (ap);
 }
 
-PyObject *Radare_plugin_io(Radare* self, PyObject *args) {
+PyObject *Rizin_plugin_io(Rizin* self, PyObject *args) {
 	void *ptr = NULL;
 	PyObject *arglist = Py_BuildValue("(i)", 0);
 	PyObject *o = PyEval_CallObject (args, arglist);
 
-	RIOPlugin *ap = R_NEW0 (RIOPlugin);
+	RzIOPlugin *ap = RZ_NEW0 (RzIOPlugin);
 	if (!ap) {
 		return Py_False;
 	}
@@ -206,11 +206,11 @@ PyObject *Radare_plugin_io(Radare* self, PyObject *args) {
 #endif
 	Py_DECREF (o);
 
-	RLibStruct lp = {};
-	lp.type = R_LIB_TYPE_IO;
+	RzLibStruct lp = {};
+	lp.type = RZ_LIB_TYPE_IO;
 	lp.data = ap;
-	lp.free = (void (*)(void *data))Radare_plugin_io_free;
-	r_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	lp.free = (void (*)(void *data))Rizin_plugin_io_free;
+	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }
 

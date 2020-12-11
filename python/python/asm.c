@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2019 - pancake */
+/* rizin - LGPL - Copyright 2009-2019 - pancake */
 
 #include "asm.h"
 #include "core.h"
@@ -13,11 +13,11 @@ void py_export_asm_enum(PyObject *tp_dict) {
 		}\
 	}
 
-	// R_SYS_ENDIAN_*
-	PYENUM(R_SYS_ENDIAN_NONE);
-	PYENUM(R_SYS_ENDIAN_LITTLE);
-	PYENUM(R_SYS_ENDIAN_BIG);
-	PYENUM(R_SYS_ENDIAN_BI);
+	// RZ_SYS_ENDIAN_*
+	PYENUM(RZ_SYS_ENDIAN_NONE);
+	PYENUM(RZ_SYS_ENDIAN_LITTLE);
+	PYENUM(RZ_SYS_ENDIAN_BIG);
+	PYENUM(RZ_SYS_ENDIAN_BI);
 #undef PYENUM
 }
 
@@ -49,11 +49,11 @@ static int check_list_result(PyObject *result, const char *fcn_name) {
 	return 1;
 }
 
-static int py_assemble(RAsm *a, RAsmOp *op, const char *str) {
+static int py_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 	int i, size = 0;
 	int seize = -1;
 	const char *opstr = str;
-	ut8 *buf = (ut8*)r_strbuf_get (&op->buf);
+	ut8 *buf = (ut8*)rz_strbuf_get (&op->buf);
 	if (py_assemble_cb) {
 		PyObject *arglist = Py_BuildValue ("(zK)", str, a->pc);
 		PyObject *result = PyEval_CallObject (py_assemble_cb, arglist);
@@ -67,16 +67,16 @@ static int py_assemble(RAsm *a, RAsmOp *op, const char *str) {
 		}
 	}
 	op->size = size = seize;
-	r_strbuf_set (&op->buf_asm, opstr);
-	//r_hex_bin2str ((ut8*)r_strbuf_get (&op->buf), op->size, r_strbuf_get (&op->buf_hex));
+	rz_strbuf_set (&op->buf_asm, opstr);
+	//rz_hex_bin2str ((ut8*)rz_strbuf_get (&op->buf), op->size, rz_strbuf_get (&op->buf_hex));
 	return seize;
 }
 
-static int py_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+static int py_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int size = 0;
 	int seize = -1;
-	r_asm_op_init (op);
-	r_strbuf_set (&op->buf_asm, "invalid");
+	rz_asm_op_init (op);
+	rz_strbuf_set (&op->buf_asm, "invalid");
 	if (py_disassemble_cb) {
 		Py_buffer pybuf = {
 			.buf = (void *) buf, // Warning: const is lost when casting
@@ -92,22 +92,22 @@ static int py_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			PyObject *pylen = PyList_GetItem (result, 0);
 			PyObject *pystr = PyList_GetItem (result, 1);
 			seize = PyNumber_AsSsize_t (pylen, NULL);
-			r_strbuf_set (&op->buf_asm, PyUnicode_AsUTF8 (pystr));
+			rz_strbuf_set (&op->buf_asm, PyUnicode_AsUTF8 (pystr));
 			Py_DECREF (result);
 		}
 	}
 	op->size = size = seize;
-	int buflen = R_MAX (1, op->size);
-	buflen = R_MIN (buflen, len);
+	int buflen = RZ_MAX (1, op->size);
+	buflen = RZ_MIN (buflen, len);
 	char *res = calloc (buflen, 3);
 	if (res) {
-		r_asm_op_set_buf (op, buf, buflen);
+		rz_asm_op_set_buf (op, buf, buflen);
 		free (res);
 	}
 	return seize;
 }
 
-void Radare_plugin_asm_free(RAsmPlugin *ap) {
+void Rizin_plugin_asm_free(RzAsmPlugin *ap) {
 	free ((char *)ap->name);
 	free ((char *)ap->arch);
 	free ((char *)ap->license);
@@ -115,11 +115,11 @@ void Radare_plugin_asm_free(RAsmPlugin *ap) {
 	free (ap);
 }
 
-PyObject *Radare_plugin_asm(Radare* self, PyObject *args) {
+PyObject *Rizin_plugin_asm(Rizin* self, PyObject *args) {
 	PyObject *arglist = Py_BuildValue ("(i)", 0);
 	PyObject *o = PyEval_CallObject (args, arglist);
 
-	RAsmPlugin *ap = R_NEW0 (RAsmPlugin);
+	RzAsmPlugin *ap = RZ_NEW0 (RzAsmPlugin);
 	if (!ap) {
 		return NULL;
 	}
@@ -143,10 +143,10 @@ PyObject *Radare_plugin_asm(Radare* self, PyObject *args) {
 	}
 	Py_DECREF (o);
 
-	RLibStruct lp = {0};
-	lp.type = R_LIB_TYPE_ASM;
+	RzLibStruct lp = {0};
+	lp.type = RZ_LIB_TYPE_ASM;
 	lp.data = ap;
-	lp.free = (void (*)(void *data))Radare_plugin_asm_free;
-	r_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	lp.free = (void (*)(void *data))Rizin_plugin_asm_free;
+	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }

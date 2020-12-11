@@ -3,11 +3,11 @@
 #
 #  -- pancake @ nopcode.org
 #
-# The r2lang.plugin function exposes a way to register new plugins
+# The rzlang.plugin function exposes a way to register new plugins
 # into the RCore instance. This API is only available from RLang.
-# You must call with with '#!python test.py' or 'r2 -i test.py ..'
+# You must call with with '#!python test.py' or 'rz -i test.py ..'
 
-import r2lang
+import rzlang
 
 def pyasm(a):
 	def assemble(s):
@@ -31,6 +31,6 @@ def pyasm(a):
 		"disassemble": disassemble,
 	}
 
-if not r2lang.plugin("asm", pyasm):
+if not rzlang.plugin("asm", pyasm):
 	print("Failed to register the python asm plugin.")
 	

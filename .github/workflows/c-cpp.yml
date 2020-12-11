@@ -1,4 +1,4 @@
-name: R2L
+name: RzLang
 
 on:
   push:
@@ -10,14 +10,19 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+    - name: Install python
+      run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-dev ninja-build
+    - name: Install meson and ninja
+      run: pip3 install --user meson PyYAML
     - uses: actions/checkout@v2
-    - name: radare2
+    - name: rizin
       run: |
-          git clone --depth=1 https://github.com/radareorg/radare2
-          cd radare2
-          ./configure --prefix=/usr
-          make
-          sudo make install
+          git clone --recursive --depth=1 https://github.com/rizinorg/rizin
+          cd rizin
+          export PATH=${HOME}/.local/bin:${PATH}
+          meson --prefix=/usr build
+          ninja -C build
+          sudo ninja -C build install
           cd ..
     - name: configure
       run: ./configure --prefix=/usr

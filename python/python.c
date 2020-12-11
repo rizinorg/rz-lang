@@ -1,36 +1,36 @@
-/* radare2 - LGPL - Copyright 2009-2019 - pancake */
-/* python extension for radare2's r_lang */
+/* rizin - LGPL - Copyright 2009-2019 - pancake */
+/* python extension for rizin's rz_lang */
 
 #include "python/common.h"
 #include "python/core.h"
 #include "python/io.h"
 #include "python/asm.h"
-#include "python/anal.h"
+#include "python/analysis.h"
 #include "python/bin.h"
-#define PLUGIN_NAME r_lang_plugin_python
+#define PLUGIN_NAME rz_lang_plugin_python
 
 typedef struct {
 	const char *type;
-	PyObject* (*handler)(Radare*, PyObject*);
-} R2Plugins;
+	PyObject* (*handler)(Rizin*, PyObject*);
+} RzPlugins;
 
-R2Plugins plugins[] = {
-	{ "core", &Radare_plugin_core },
-	{ "asm", &Radare_plugin_asm },
-	{ "anal", &Radare_plugin_anal },
-	{ "bin", &Radare_plugin_bin },
-	{ "io", &Radare_plugin_io },
+RzPlugins plugins[] = {
+	{ "core", &Rizin_plugin_core },
+	{ "asm", &Rizin_plugin_asm },
+	{ "analysis", &Rizin_plugin_analysis },
+	{ "bin", &Rizin_plugin_bin },
+	{ "io", &Rizin_plugin_io },
 	{ NULL }
 };
 
-static int run(RLang *lang, const char *code, int len) {
-	core = (RCore *)lang->user;
+static int run(RzLang *lang, const char *code, int len) {
+	core = (RzCore *)lang->user;
 	PyRun_SimpleString (code);
 	return true;
 }
 
 static int slurp_python(const char *file) {
-	FILE *fd = r_sandbox_fopen (file, "r");
+	FILE *fd = rz_sandbox_fopen (file, "r");
 	if (fd) {
 		PyRun_SimpleFile (fd, file);
 		fclose (fd);
@@ -39,20 +39,20 @@ static int slurp_python(const char *file) {
 	return false;
 }
 
-static int run_file(struct r_lang_t *lang, const char *file) {
+static int run_file(struct rz_lang_t *lang, const char *file) {
 	return slurp_python (file);
 }
 
 static char *py_nullstr = "";
 
-static void Radare_dealloc(Radare* self) {
+static void Rizin_dealloc(Rizin* self) {
 	Py_XDECREF (self->first);
 	Py_XDECREF (self->last);
 	//self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
-	Radare *self = (Radare *)type->tp_alloc (type, 0);
+static PyObject * Rizin_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+	Rizin *self = (Rizin *)type->tp_alloc (type, 0);
 	if (self) {
 		self->first = PyUnicode_FromString ("");
 		if (!self->first) {
@@ -69,7 +69,7 @@ static PyObject * Radare_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	return (PyObject *)self;
 }
 
-static PyObject *Radare_plugin(Radare* self, PyObject *args) {
+static PyObject *Rizin_plugin(Rizin* self, PyObject *args) {
 	char *type = NULL;
 	void *cb = NULL;
 	int i;
@@ -86,20 +86,20 @@ static PyObject *Radare_plugin(Radare* self, PyObject *args) {
 			return plugins[i].handler (self, cb);
 		}
 	}
-	eprintf ("TODO: r2lang.plugin does not supports '%s' plugins yet\n", type);
+	eprintf ("TODO: rzlang.plugin does not supports '%s' plugins yet\n", type);
 	return Py_False;
 }
 
-static PyObject *Radare_cmd(Radare* self, PyObject *args) {
+static PyObject *Rizin_cmd(Rizin* self, PyObject *args) {
 	char *str, *cmd = NULL;
 	if (!PyArg_ParseTuple (args, "s", &cmd)) {
 		return NULL;
 	}
-	str = r_core_cmd_str (core, cmd);
+	str = rz_core_cmd_str (core, cmd);
 	return PyUnicode_FromString (str? str: py_nullstr);
 }
 
-static int Radare_init(Radare *self, PyObject *args, PyObject *kwds) {
+static int Rizin_init(Rizin *self, PyObject *args, PyObject *kwds) {
 	static char *kwlist[] = { "first", "last", "number", NULL };
 	PyObject *first = NULL, *last = NULL, *tmp;
 
@@ -122,27 +122,27 @@ static int Radare_init(Radare *self, PyObject *args, PyObject *kwds) {
 	return 0;
 }
 
-static PyMemberDef Radare_members[] = {
-	{"first", T_OBJECT_EX, offsetof(Radare, first), 0, "first name"},
-	{"last", T_OBJECT_EX, offsetof(Radare, last), 0, "last name"},
-	{"number", T_INT, offsetof(Radare, number), 0, "noddy number"},
+static PyMemberDef Rizin_members[] = {
+	{"first", T_OBJECT_EX, offsetof(Rizin, first), 0, "first name"},
+	{"last", T_OBJECT_EX, offsetof(Rizin, last), 0, "last name"},
+	{"number", T_INT, offsetof(Rizin, number), 0, "noddy number"},
 	{NULL}  /* Sentinel */
 };
 
-static PyMethodDef Radare_methods[] = {
-	{"cmd", (PyCFunction)Radare_cmd, METH_VARARGS,
-		"Executes a radare command and returns a string" },
-	{"plugin", (PyCFunction)Radare_plugin, METH_VARARGS,
-		"Register plugins in radare2" },
+static PyMethodDef Rizin_methods[] = {
+	{"cmd", (PyCFunction)Rizin_cmd, METH_VARARGS,
+		"Executes a rizin command and returns a string" },
+	{"plugin", (PyCFunction)Rizin_plugin, METH_VARARGS,
+		"Register plugins in rizin" },
 	{NULL}  /* Sentinel */
 };
 
-static PyTypeObject RadareType = {
+static PyTypeObject RizinType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"radare.RadareInternal",   /*tp_name*/
-	sizeof (Radare),           /*tp_basicsize*/
+	"rizin.RizinInternal",   /*tp_name*/
+	sizeof (Rizin),           /*tp_basicsize*/
 	0,                         /*tp_itemsize*/
-	(destructor)Radare_dealloc,/*tp_dealloc*/
+	(destructor)Rizin_dealloc,/*tp_dealloc*/
 	0,                         /*tp_print*/
 	0,                         /*tp_getattr*/
 	0,                         /*tp_setattr*/
@@ -158,24 +158,24 @@ static PyTypeObject RadareType = {
 	0,                         /*tp_setattro*/
 	0,                         /*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-	"Radare objects",          /* tp_doc */
+	"Rizin objects",          /* tp_doc */
 	0,                         /* tp_traverse */
 	0,                         /* tp_clear */
 	0,                         /* tp_richcompare */
 	0,                         /* tp_weaklistoffset */
 	0,                         /* tp_iter */
 	0,                         /* tp_iternext */
-	Radare_methods,            /* tp_methods */
-	Radare_members,            /* tp_members */
+	Rizin_methods,            /* tp_methods */
+	Rizin_members,            /* tp_members */
 	0,                         /* tp_getset */
 	0,                         /* tp_base */
 	0,                         /* tp_dict */
 	0,                         /* tp_descr_get */
 	0,                         /* tp_descr_set */
 	0,                         /* tp_dictoffset */
-	(initproc)Radare_init,     /* tp_init */
+	(initproc)Rizin_init,     /* tp_init */
 	0,                         /* tp_alloc */
-	Radare_new,                /* tp_new */
+	Rizin_new,                /* tp_new */
 };
 
 /*
@@ -189,44 +189,40 @@ static PyMethodDef EmbMethods[] = {
 
 static PyModuleDef EmbModule = {
 	PyModuleDef_HEAD_INIT,
-	"r2lang",
-	NULL, -1, Radare_methods,
+	"rzlang",
+	NULL, -1, Rizin_methods,
 	NULL, NULL, NULL, NULL
 };
 
-static PyObject *init_radare_module(void) {
-	// TODO import r2-swig api
-	//eprintf ("TODO: python>3.x instantiate 'r' object\n");
-	/* Gcore = lang->user; */
-	/* eprintf("\x1b[31;1minit_radare_module\x1b[0m\n"); */
-	if (PyType_Ready (&RadareType) < 0) {
+static PyObject *init_rizin_module(void) {
+	if (PyType_Ready (&RizinType) < 0) {
 		return NULL;
 	}
-	RadareType.tp_dict = PyDict_New();
-	py_export_anal_enum(RadareType.tp_dict);
-	py_export_asm_enum(RadareType.tp_dict);
+	RizinType.tp_dict = PyDict_New();
+	py_export_analysis_enum(RizinType.tp_dict);
+	py_export_asm_enum(RizinType.tp_dict);
 	PyObject *m = PyModule_Create (&EmbModule);
 	if (!m) {
-		eprintf ("Cannot create python3 r2 module\n");
+		eprintf ("Cannot create python3 rz module\n");
 		return NULL;
 	}
-	Py_INCREF(&RadareType);
-	PyModule_AddObject(m, "R", (PyObject *)&RadareType);
+	Py_INCREF(&RizinType);
+	PyModule_AddObject(m, "RZ", (PyObject *)&RizinType);
 	return m;
 }
 
 /* -init- */
 
-static int init(RLang *user);
-static bool setup(RLang *user);
+static int init(RzLang *user);
+static bool setup(RzLang *user);
 
 static int prompt(void *user) {
 	return !PyRun_SimpleString (
-		"r2 = None\n"
+		"rz = None\n"
 		"try:\n"
-		"	import r2lang\n"
-		"	import r2pipe\n"
-		"	r2 = r2pipe.open()\n"
+		"	import rzlang\n"
+		"	import rzpipe\n"
+		"	rz = rzpipe.open()\n"
 		"	import IPython\n"
 		"	IPython.embed()\n"
 		"except:\n"
@@ -234,19 +230,19 @@ static int prompt(void *user) {
 	);
 }
 
-static bool setup(RLang *lang) {
-	RListIter *iter;
-	RLangDef *def;
+static bool setup(RzLang *lang) {
+	RzListIter *iter;
+	RzLangDef *def;
 	char cmd[128];
 	// Segfault if already initialized ?
 	PyRun_SimpleString (
 		"try:\n"
-		"	from r2.r_core import RCore\n"
+		"	from rz.rz_core import RzCore\n"
 		"except:\n"
 		"	pass\n");
-	PyRun_SimpleString ("import r2pipe");
+	PyRun_SimpleString ("import rzpipe");
 	core = lang->user;
-	r_list_foreach (lang->defs, iter, def) {
+	rz_list_foreach (lang->defs, iter, def) {
 		if (!def->type || !def->name) {
 			continue;
 		}
@@ -264,7 +260,7 @@ static bool setup(RLang *lang) {
 	return true;
 }
 
-static int init(RLang *lang) {
+static int init(RzLang *lang) {
 	if (lang) {
 		core = lang->user;
 	}
@@ -272,7 +268,7 @@ static int init(RLang *lang) {
 	if (Py_IsInitialized ()) {
 		return 0;
 	}
-	PyImport_AppendInittab ("r2lang", init_radare_module);
+	PyImport_AppendInittab ("rzlang", init_rizin_module);
 	PyImport_AppendInittab ("binfile", init_pybinfile_module);
 	Py_Initialize ();
 	// Add a current directory to the PYTHONPATH
@@ -292,10 +288,9 @@ static int fini(void *user) {
 }
 
 static const char *help =
-	//" r = new RadareInternal()\n"
-	"  print r2.cmd(\"p8 10\");\n";
+	"  print rz.cmd(\"p8 10\");\n";
 
-RLangPlugin PLUGIN_NAME = {
+RzLangPlugin PLUGIN_NAME = {
 	.name = "python",
 	.alias = "python",
 	.ext = "py",
@@ -311,9 +306,9 @@ RLangPlugin PLUGIN_NAME = {
 };
 
 #if !CORELIB
-RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_LANG,
+RzLibStruct rizin_plugin = {
+	.type = RZ_LIB_TYPE_LANG,
 	.data = &PLUGIN_NAME,
-	.version = R2_VERSION
+	.version = RZ_VERSION
 };
 #endif

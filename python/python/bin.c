@@ -1,15 +1,15 @@
-/* radare - LGPL - Copyright 2017-2019 - xvilka, pancake */
+/* rizin - LGPL - Copyright 2017-2019 - xvilka, pancake */
 
 #include "bin.h"
 #include "core.h"
 
-/* The structure, representing simplified version of RBinFile/RBinObject */
+/* The structure, representing simplified version of RzBinFile/RzBinObject */
 typedef struct {
 	PyObject_HEAD
-	PyObject *bin_obj; /* RBinFile->o->bin_obj */
-	PyObject *buf;  /* RBinFile->buf */
-	ut64 size; /* RBinFile->size */
-	ut64 loadaddr; /* RBinFile->o->loadaddr */
+	PyObject *bin_obj; /* RzBinFile->o->bin_obj */
+	PyObject *buf;  /* RzBinFile->buf */
+	ut64 size; /* RzBinFile->size */
+	ut64 loadaddr; /* RzBinFile->o->loadaddr */
 } PyBinFile;
 
 static void PyBinFile_dealloc(PyBinFile* self) {
@@ -60,7 +60,7 @@ static int PyBinFile_init(PyBinFile *self, PyObject *args, PyObject *kwds) {
 
 // write_bytes(addr, bytes)
 // TODO: Return an error
-static PyObject *RBin_write_bytes(Radare* self, PyObject *args) {
+static PyObject *RzBin_write_bytes(Rizin* self, PyObject *args) {
 	char *buf = NULL;
 	ut64 addr = 0;
 	int buf_sz = 0;
@@ -79,8 +79,8 @@ static PyMemberDef PyBinFile_members[] = {
 };
 
 static PyMethodDef PyBinFile_methods[] = {
-	{"write_bytes", (PyCFunction)RBin_write_bytes, METH_VARARGS,
-		"Write bytes back into RBin buffer" },
+	{"write_bytes", (PyCFunction)RzBin_write_bytes, METH_VARARGS,
+		"Write bytes back into RzBin buffer" },
 	{NULL}  /* Sentinel */
 };
 
@@ -138,13 +138,13 @@ PyObject *init_pybinfile_module(void) {
 	}
 	PyObject *m = PyModule_Create (&PyBinModule);
 	if (!m) {
-		eprintf ("Cannot create python3 RBinFile module\n");
+		eprintf ("Cannot create python3 RzBinFile module\n");
 		return NULL;
 	}
 	return m;
 }
 
-PyObject* create_PyBinFile(RBinFile *binfile)
+PyObject* create_PyBinFile(RzBinFile *binfile)
 {
 	if (!binfile) return NULL;
 	PyObject *pb = _PyObject_New(&PyBinFileType);
@@ -162,7 +162,7 @@ PyObject* create_PyBinFile(RBinFile *binfile)
 		((PyBinFile*)pb)->loadaddr = binfile->o->loadaddr;
 	}
 	ut64 buf_size;
-	const ut8 *buf_ptr = r_buf_data (binfile->buf, &buf_size);
+	const ut8 *buf_ptr = rz_buf_data (binfile->buf, &buf_size);
 	if (binfile->buf) {
 		Py_buffer pybuf = {
 			.buf = (void*) buf_ptr,
@@ -178,7 +178,7 @@ PyObject* create_PyBinFile(RBinFile *binfile)
 }
 /* Plugin callbacks */
 
-// dict -> RBinSection
+// dict -> RzBinSection
 // "name" : name,
 // "size" : size,
 // "vsize" : vsize,
@@ -204,7 +204,7 @@ PyObject* create_PyBinFile(RBinFile *binfile)
 		sec->add = getI (pysec, "add"); \
 		sec->is_data = getI (pysec, "is_data")
 
-// dict -> RBinSymbol
+// dict -> RzBinSymbol
 // "name" : name,
 // "dname" : dname,
 // "classname" : classname,
@@ -237,7 +237,7 @@ PyObject* create_PyBinFile(RBinFile *binfile)
 		sym->method_flags = getI (pysym, "method_flags"); \
 		sym->dup_count = getI (pysym, "dup_count")
 
-// dict -> RBinImport
+// dict -> RzBinImport
 // "name" : name,
 // "bind" : bind,
 // "type" : type,
@@ -254,11 +254,11 @@ PyObject* create_PyBinFile(RBinFile *binfile)
 		imp->ordinal = getI (pyimp, "ordinal"); \
 		imp->visibility = getI (pyimp, "visibility")
 
-// dict -> RBinSection
+// dict -> RzBinSection
 // "type" : type, (integer)
 // "additive" : additive, (integer)
-// "symbol" : RBinSymbol,
-// "import" : RBinImport,
+// "symbol" : RzBinSymbol,
+// "import" : RzBinImport,
 // "addend" : addend,
 // "vaddr" : vaddr,
 // "paddr" : paddr,
@@ -291,10 +291,10 @@ static void *py_binsym_cb = NULL;
 static void *py_entries_cb = NULL;
 static void *py_info_cb = NULL;
 
-static bool py_load_buffer(RBinFile *arch, void **bin_obj, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool py_load_buffer(RzBinFile *arch, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	int rres = 0;
 	ut64 size = 0;
-	const ut8 *buf_data = r_buf_data (buf, &size);
+	const ut8 *buf_data = rz_buf_data (buf, &size);
 
 	if (!arch) return false;
 	if (py_load_buffer_cb) {
@@ -325,11 +325,11 @@ static bool py_load_buffer(RBinFile *arch, void **bin_obj, RBuffer *buf, ut64 lo
 	return false;
 }
 
-static bool py_check_buffer(RBuffer *buf)
+static bool py_check_buffer(RzBuffer *buf)
 {
 	int rres = 0;
 	ut64 length = 0;
-	const ut8 *buf_data = r_buf_data (buf, &length);
+	const ut8 *buf_data = rz_buf_data (buf, &length);
 
 
 	if (!buf_data || length == 0) {
@@ -369,10 +369,10 @@ static bool py_check_buffer(RBuffer *buf)
 
 }
 
-static void py_destroy(RBinFile *arch) {
+static void py_destroy(RzBinFile *arch) {
 	if (!arch) return;
 	if (py_destroy_cb) {
-		// destroy(RBinFile) - returns something
+		// destroy(RzBinFile) - returns something
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -386,12 +386,12 @@ static void py_destroy(RBinFile *arch) {
 	}
 }
 
-static ut64 py_baddr(RBinFile *arch) {
+static ut64 py_baddr(RzBinFile *arch) {
 	ut64 rres = 0;
 
 	if (!arch) return 0;
 	if (py_baddr_cb) {
-		// baddr(RBinFile) - returns baddr
+		// baddr(RzBinFile) - returns baddr
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -411,15 +411,15 @@ static ut64 py_baddr(RBinFile *arch) {
 	return 0;
 }
 
-static RBinAddr* py_binsym(RBinFile *arch, int sym) {
-	RBinAddr* ret = NULL;
+static RzBinAddr* py_binsym(RzBinFile *arch, int sym) {
+	RzBinAddr* ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = R_NEW0 (RBinAddr))) {
+	if (!(ret = RZ_NEW0 (RzBinAddr))) {
 		return NULL;
 	}
 	if (py_binsym_cb) {
-		// binsym(RBinFile, symtype) - returns RBinAddr if found
+		// binsym(RzBinFile, symtype) - returns RzBinAddr if found
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O, i)", pybinfile, sym);
 		if (!arglist) {
@@ -428,7 +428,7 @@ static RBinAddr* py_binsym(RBinFile *arch, int sym) {
 		}
 		PyObject *result = PyEval_CallObject (py_binsym_cb, arglist);
 		if (result && PyList_Check (result)) {
-			// dict -> RBinEntry
+			// dict -> RzBinEntry
 			// "vaddr" : vaddr,
 			// "paddr" : paddr,
 			// "hpaddr" : hpaddr,
@@ -447,17 +447,17 @@ static RBinAddr* py_binsym(RBinFile *arch, int sym) {
 	return ret;
 }
 
-static RList* py_entries(RBinFile *arch) {
+static RzList* py_entries(RzBinFile *arch) {
 	ssize_t listsz = 0;
 	ssize_t i = 0;
-	RList* ret = NULL;
+	RzList* ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = r_list_new())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	if (py_entries_cb) {
-		// entries(RBinFile) - returns list of entries
+		// entries(RzBinFile) - returns list of entries
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -468,21 +468,21 @@ static RList* py_entries(RBinFile *arch) {
 		if (result && PyList_Check (result)) {
 			listsz = PyList_Size(result);
 			for (i = 0; i < listsz; i++) {
-				// dict -> RBinEntry
+				// dict -> RzBinEntry
 				// "vaddr" : vaddr,
 				// "paddr" : paddr,
 				// "hpaddr" : hpaddr,
 				// "type" : type,
 				// "bits" : bits
 				PyObject *pyentry = PyList_GetItem (result, i);
-				RBinAddr *entry = R_NEW0 (RBinAddr);
+				RzBinAddr *entry = RZ_NEW0 (RzBinAddr);
 				if (!entry) continue;
 				entry->vaddr = getI (pyentry, "vaddr");
 				entry->paddr = getI (pyentry, "paddr");
 				entry->hpaddr = getI (pyentry, "hpaddr");
 				entry->type = getI (pyentry, "type");
 				entry->bits = getI (pyentry, "bits");
-				r_list_append(ret, entry);
+				rz_list_append(ret, entry);
 			}
 		} else {
 			eprintf ("entries: Unknown type returned. List was expected.\n");
@@ -491,17 +491,17 @@ static RList* py_entries(RBinFile *arch) {
 	return ret;
 }
 
-static RList* py_sections(RBinFile *arch) {
+static RzList* py_sections(RzBinFile *arch) {
 	ssize_t listsz = 0;
 	ssize_t i = 0;
-	RList* ret = NULL;
+	RzList* ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = r_list_new())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	if (py_sections_cb) {
-		// sections(RBinFile) - returns list of sections
+		// sections(RzBinFile) - returns list of sections
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -512,12 +512,12 @@ static RList* py_sections(RBinFile *arch) {
 		if (result && PyList_Check (result)) {
 			listsz = PyList_Size(result);
 			for (i = 0; i < listsz; i++) {
-				// dict -> RBinSection
+				// dict -> RzBinSection
 				PyObject *pysection = PyList_GetItem (result, i);
-				RBinSection *section = R_NEW0(RBinSection);
+				RzBinSection *section = RZ_NEW0(RzBinSection);
 				if (!section) continue;
 				READ_SECTION(section, pysection);
-				r_list_append(ret, section);
+				rz_list_append(ret, section);
 			}
 		} else {
 			eprintf ("sections: Unknown type returned. List was expected.\n");
@@ -526,17 +526,17 @@ static RList* py_sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList* py_imports(RBinFile *arch) {
+static RzList* py_imports(RzBinFile *arch) {
 	ssize_t listsz = 0;
 	ssize_t i = 0;
-	RList* ret = NULL;
+	RzList* ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = r_list_new())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	if (py_imports_cb) {
-		// imports(RBinFile) - returns list of imports
+		// imports(RzBinFile) - returns list of imports
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -547,12 +547,12 @@ static RList* py_imports(RBinFile *arch) {
 		if (result && PyList_Check (result)) {
 			listsz = PyList_Size(result);
 			for (i = 0; i < listsz; i++) {
-				// dict -> RBinSection
+				// dict -> RzBinSection
 				PyObject *pyimport = PyList_GetItem (result, i);
-				RBinImport *import = R_NEW0 (RBinImport);
+				RzBinImport *import = RZ_NEW0 (RzBinImport);
 				if (!import) continue;
 				READ_IMPORT(import, pyimport);
-				r_list_append(ret, import);
+				rz_list_append(ret, import);
 			}
 		} else {
 			eprintf ("imports: Unknown type returned. List was expected.\n");
@@ -561,17 +561,17 @@ static RList* py_imports(RBinFile *arch) {
 	return ret;
 }
 
-static RList* py_symbols(RBinFile *arch) {
+static RzList* py_symbols(RzBinFile *arch) {
 	ssize_t listsz = 0;
 	ssize_t i = 0;
-	RList* ret = NULL;
+	RzList* ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = r_list_new())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	if (py_symbols_cb) {
-		// symbols(RBinFile) - returns list of symbols
+		// symbols(RzBinFile) - returns list of symbols
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -582,12 +582,12 @@ static RList* py_symbols(RBinFile *arch) {
 		if (result && PyList_Check (result)) {
 			listsz = PyList_Size(result);
 			for (i = 0; i < listsz; i++) {
-				// dict -> RBinSection
+				// dict -> RzBinSection
 				PyObject *pysym = PyList_GetItem (result, i);
-				RBinSymbol *symbol = R_NEW0 (RBinSymbol);
+				RzBinSymbol *symbol = RZ_NEW0 (RzBinSymbol);
 				if (!symbol) continue;
 				READ_SYMBOL(symbol, pysym);
-				r_list_append(ret, symbol);
+				rz_list_append(ret, symbol);
 			}
 		} else {
 			eprintf ("symbols: Unknown type returned. List was expected.\n");
@@ -596,17 +596,17 @@ static RList* py_symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RList* py_relocs(RBinFile *arch) {
+static RzList* py_relocs(RzBinFile *arch) {
 	ssize_t listsz = 0;
 	ssize_t i = 0;
-	RList* ret = NULL;
+	RzList* ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = r_list_new())) {
+	if (!(ret = rz_list_new())) {
 		return NULL;
 	}
 	if (py_relocs_cb) {
-		// relocs(RBinFile) - returns list of relocations
+		// relocs(RzBinFile) - returns list of relocations
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -617,12 +617,12 @@ static RList* py_relocs(RBinFile *arch) {
 		if (result && PyList_Check (result)) {
 			listsz = PyList_Size(result);
 			for (i = 0; i < listsz; i++) {
-				// dict -> RBinSection
+				// dict -> RzBinSection
 				PyObject *pyrel = PyList_GetItem (result, i);
-				RBinReloc *reloc = R_NEW0 (RBinReloc);
+				RzBinReloc *reloc = RZ_NEW0 (RzBinReloc);
 				if (!reloc) continue;
 				READ_RELOC(reloc, pyrel);
-				r_list_append(ret, reloc);
+				rz_list_append(ret, reloc);
 			}
 		} else {
 			eprintf ("relocs: Unknown type returned. List was expected.\n");
@@ -631,15 +631,15 @@ static RList* py_relocs(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo *py_info(RBinFile *arch) {
-	RBinInfo *ret = NULL;
+static RzBinInfo *py_info(RzBinFile *arch) {
+	RzBinInfo *ret = NULL;
 
 	if (!arch) return NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
+	if (!(ret = RZ_NEW0 (RzBinInfo))) {
 		return NULL;
 	}
 	if (py_info_cb) {
-		// info(RBinFile) - returns dictionary (structure) for RAnalOp
+		// info(RzBinFile) - returns dictionary (structure) for RAnalOp
 		PyObject *pybinfile = create_PyBinFile(arch);
 		PyObject *arglist = Py_BuildValue ("(O)", pybinfile);
 		if (!arglist) {
@@ -670,7 +670,7 @@ static RBinInfo *py_info(RBinFile *arch) {
 	return ret;
 }
 
-void Radare_plugin_bin_free(RBinPlugin *bp) {
+void Rizin_plugin_bin_free(RzBinPlugin *bp) {
 	free ((char *)bp->name);
 	free ((char *)bp->desc);
 	free ((char *)bp->license);
@@ -679,13 +679,13 @@ void Radare_plugin_bin_free(RBinPlugin *bp) {
 
 /* TODO: Add missing exported symbols */
 /* TODO: Fold the repeating code - may be add some macro? */
-PyObject *Radare_plugin_bin(Radare* self, PyObject *args) {
+PyObject *Rizin_plugin_bin(Rizin* self, PyObject *args) {
 	void *ptr = NULL;
 	init_pybinfile_module ();
 	PyObject *arglist = Py_BuildValue("(i)", 0);
 	PyObject *o = PyEval_CallObject (args, arglist);
 
-	RBinPlugin *bp = R_NEW0 (RBinPlugin);
+	RzBinPlugin *bp = RZ_NEW0 (RzBinPlugin);
 	bp->name = getS (o,"name");
 	bp->desc = getS (o, "desc");
 	bp->license = getS (o, "license");
@@ -731,42 +731,42 @@ PyObject *Radare_plugin_bin(Radare* self, PyObject *args) {
 		py_baddr_cb = ptr;
 		bp->baddr = py_baddr;
 	}
-	// Get RList* here
+	// Get RzList* here
 	ptr = getF (o, "entries");
 	if (ptr) {
 		Py_INCREF (ptr);
 		py_entries_cb = ptr;
 		bp->entries = py_entries;
 	}
-	// Get RList* here
+	// Get RzList* here
 	ptr = getF (o, "sections");
 	if (ptr) {
 		Py_INCREF (ptr);
 		py_sections_cb = ptr;
 		bp->sections = py_sections;
 	}
-	// Get RList* here
+	// Get RzList* here
 	ptr = getF (o, "imports");
 	if (ptr) {
 		Py_INCREF (ptr);
 		py_imports_cb = ptr;
 		bp->imports = py_imports;
 	}
-	// Get RList* here
+	// Get RzList* here
 	ptr = getF (o, "symbols");
 	if (ptr) {
 		Py_INCREF (ptr);
 		py_symbols_cb = ptr;
 		bp->symbols = py_symbols;
 	}
-	// Get RList* here
+	// Get RzList* here
 	ptr = getF (o, "relocs");
 	if (ptr) {
 		Py_INCREF (ptr);
 		py_relocs_cb = ptr;
 		bp->relocs = py_relocs;
 	}
-	// Get RBinAddr* here
+	// Get RzBinAddr* here
 	ptr = getF (o, "binsym");
 	if (ptr) {
 		Py_INCREF (ptr);
@@ -781,10 +781,10 @@ PyObject *Radare_plugin_bin(Radare* self, PyObject *args) {
 	}
 	Py_DECREF (o);
 
-	RLibStruct lp = {};
-	lp.type = R_LIB_TYPE_BIN;
+	RzLibStruct lp = {};
+	lp.type = RZ_LIB_TYPE_BIN;
 	lp.data = bp;
-	lp.free = (void (*)(void *data))Radare_plugin_bin_free;
-	r_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	lp.free = (void (*)(void *data))Rizin_plugin_bin_free;
+	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }

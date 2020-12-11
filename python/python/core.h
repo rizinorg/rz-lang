@@ -1,15 +1,15 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
+/* rizin - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
 
 #ifndef _PY_CORE_H
 #define _PY_CORE_H
 
-#include <r_core.h>
+#include <rz_core.h>
 #include "common.h"
 
-extern RCore *core;
+extern RzCore *core;
 
-void Radare_plugin_core_free(RCorePlugin *ap);
+void Rizin_plugin_core_free(RzCorePlugin *ap);
 
-PyObject *Radare_plugin_core(Radare* self, PyObject *args);
+PyObject *Rizin_plugin_core(Rizin* self, PyObject *args);
 
 #endif /* _PY_CORE_H */

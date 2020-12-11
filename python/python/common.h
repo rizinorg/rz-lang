@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
+/* rizin - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
 
 #ifndef _PY_COMMON_H
 #define _PY_COMMON_H
-#include <r_lib.h>
-#include <r_lang.h>
+#include <rz_lib.h>
+#include <rz_lang.h>
 
 #undef _GNU_SOURCE
 #undef _XOPEN_SOURCE
@@ -22,7 +22,7 @@ typedef struct {
 	PyObject *first; /* first name */
 	PyObject *last;  /* last name */
 	int number;
-} Radare;
+} Rizin;
 
 PyObject *getO(PyObject *o, const char *name);
 
@@ -33,4 +33,5 @@ st64 getI(PyObject *o, const char *name);
 void *getF(PyObject *o, const char *name);
 
 bool getB(PyObject *o, const char *name);
+
 #endif /* _PY_COMMON_H */

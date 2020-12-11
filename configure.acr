@@ -1,13 +1,13 @@
-PKGNAME radare2-rlang
-VERSION 4.6.0-git
-CONTACT pancake ; pancake@nopcode.org
+PKGNAME rizin-rlang
+VERSION 1.0.0-git
+CONTACT rizin ; team@rizin.re
 
 REPORT PREFIX ;
 
 LANG_C!
 
 (( mandatory ))
-PKGCFG! R2_CFLAGS R2_LDFLAGS r_core
+PKGCFG! RZ_CFLAGS RZ_LDFLAGS rz_core
 
 ARG_WITH USEROSTYPE=auto ostype Choose OS type ( gnulinux windows darwin haiku ) ;
 

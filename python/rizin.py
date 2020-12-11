@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """python api for it
 
-This is the API provided with radare to use python inside radare as
+This is the API provided with rizin to use python inside rizin as
 scripting language for extending its features or automatize some
 tasks analyzing code, patching binaries or debugging programs.
 
 Here's a small example of use:
 
-from radare import *
+from rizin import *
 
 seek(0x1024)
 print(hex(3))
@@ -17,7 +17,7 @@ print(hex(3))
 quit()
 
 """
-# Already imported from radare's core
+# Already imported from rizin's core
 import r
 import string
 import binascii

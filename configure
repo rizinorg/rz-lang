@@ -91,7 +91,7 @@ create_environ() {
 : ${DATADIR:="${SPREFIX}/share"}
 : ${INFODIR:="${DATADIR}/info"}
 : ${MANDIR:="${DATADIR}/man"}
-: ${DOCDIR:="${DATADIR}/doc/radare2-rlang"}
+: ${DOCDIR:="${DATADIR}/doc/rizin-rlang"}
 : ${LOCALSTATEDIR:="${SPREFIX}/var"}
 for A in `echo ${PATH} | sed -e 's,:, ,g'` ; do
   [ -e "$A"/ginstall ] && : ${INSTALL:="$A"/ginstall} && break
@@ -104,12 +104,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2-rlang' ; VERSION='4.6.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=6; VERSION_PATCH=0; VERSION_NUMBER=40600; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='rizin-rlang' ; VERSION='4.6.0-git' ; VERSION_MAJOR=4; VERSION_MINOR=6; VERSION_PATCH=0; VERSION_NUMBER=40600; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-rlang-4.6.0-git to adapt to many kinds of systems.
+'configure' configures rizin-rlang-4.6.0-git to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -131,7 +131,7 @@ Installation directories:
 Fine tuning of the installation directories:
   --bindir=DIR           user executables [EPREFIX/bin]
   --datadir=DIR          read-only architecture-independent data [PREFIX/share]
-  --docdir=DIR           documentation directory [DATADIR/doc/radare2-rlang]
+  --docdir=DIR           documentation directory [DATADIR/doc/rizin-rlang]
   --includedir=DIR       C header files [PREFIX/include]
   --infodir=DIR          info documentation [DATADIR/info]
   --libexecdir=DIR       program executables [EPREFIX/libexec]
@@ -178,7 +178,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-rlang-4.6.0-git configuration script done with acr v1.9.3.
+echo "rizin-rlang-4.6.0-git configuration script done with acr v1.9.3.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -201,10 +201,10 @@ case $flag in
 -V|-version|--version)
 	show_version ; ;;
 -r|--r|--report)
-echo "PKGNAME:   radare2-rlang"
-echo "VERSION:   4.6.0-git"
+echo "PKGNAME:   rizin-rlang"
+echo "VERSION:   1.0.0-git"
 echo "LANGS:     c"
-echo "PKG-CONFIG:  r_core"
+echo "PKG-CONFIG:  rz_core"
 echo "FLAGS:     --with-ostype=auto"
 	exit 0
 	;;
@@ -269,7 +269,12 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C R2_CFLAGS R2_LDFLAGS HAVE_PKGCFG_R_CORE USEROSTYPE"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR
+SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN
+INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU
+BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH
+VERSION_NUMBER PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS
+HAVE_LANG_C RZ_CFLAGS RZ_LDFLAGS HAVE_PKGCFG_RZ_CORE USEROSTYPE"
 
 create_environ
 
@@ -301,18 +306,18 @@ exit 1 ; fi
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
 type ${PKGCONFIG} > /dev/null 2>&1 || echo "ERROR: Cannot find PKGCONFIG ${PKGCONFIG}"
 echo 'Using PKGCONFIG: '${PKGCONFIG}
-printf 'checking pkg-config flags for r_core... '
-tmp=`${PKGCONFIG} --cflags r_core 2>/dev/null`
-if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_R_CORE=0;
-R2_CFLAGS='';R2_LDFLAGS='';
+printf 'checking pkg-config flags for rz_core... '
+tmp=`${PKGCONFIG} --cflags rz_core 2>/dev/null`
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_RZ_CORE=0;
+RZ_CFLAGS='';RZ_LDFLAGS='';
 echo 'This package is required'
 exit 1
 else
-R2_CFLAGS=$tmp;
-tmp=`${PKGCONFIG} --libs r_core 2>/dev/null`
+RZ_CFLAGS=$tmp;
+tmp=`${PKGCONFIG} --libs rz_core 2>/dev/null`
 if [ $? = 0 ]; then
-echo yes; HAVE_PKGCFG_R_CORE=1;
-R2_LDFLAGS=$tmp; fi; fi
+echo yes; HAVE_PKGCFG_RZ_CORE=1;
+RZ_LDFLAGS=$tmp; fi; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do

@@ -3,16 +3,16 @@ clean mrproper:
 	-rm -rf *.dSYM
 
 install:
-	mkdir -p $(DESTDIR)/$(R2_PLUGIN_PATH)
-	[ -n "`ls *.$(EXT_SO)`" ] && cp -f *.$(EXT_SO) $(DESTDIR)/$(R2_PLUGIN_PATH) || true
+	mkdir -p $(DESTDIR)/$(RZ_PLUGIN_PATH)
+	[ -n "`ls *.$(EXT_SO)`" ] && cp -f *.$(EXT_SO) $(DESTDIR)/$(RZ_PLUGIN_PATH) || true
 
 install-home:
-	mkdir -p ${R2PM_PLUGDIR}
+	mkdir -p ${RZPM_PLUGDIR}
 	[ -n "`ls *.$(EXT_SO)`" ] && \
-		cp -f *.$(EXT_SO) ${R2PM_PLUGDIR} || true
+		cp -f *.$(EXT_SO) ${RZPM_PLUGDIR} || true
 
 uninstall:
-	rm -f $(DESTDIR)/$(R2_PLUGIN_PATH)/"`ls *.$(EXT_SO)`"
+	rm -f $(DESTDIR)/$(RZ_PLUGIN_PATH)/"`ls *.$(EXT_SO)`"
 
 uninstall-home:
-	rm -f $(R2PM_PLUGDIR)/"`ls *.$(EXT_SO)`"
+	rm -f $(RZPM_PLUGDIR)/"`ls *.$(EXT_SO)`"

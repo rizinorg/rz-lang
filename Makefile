@@ -1,11 +1,6 @@
 include config.mk
 
-LANGS?=python duktape quickjs lua perl vlang
-
-# WIP language support
-# LANGS+=csharp
-# LANGS+=ruby
-# LANGS+=tcc
+LANGS?=python
 
 all: $(LANGS)
 	for LANG in $(LANGS); do $(MAKE) -C $${LANG} ; done
