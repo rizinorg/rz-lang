@@ -30,7 +30,7 @@ static int run(RzLang *lang, const char *code, int len) {
 }
 
 static int slurp_python(const char *file) {
-	FILE *fd = rz_sandbox_fopen (file, "r");
+	FILE *fd = rz_sys_fopen (file, "r");
 	if (fd) {
 		PyRun_SimpleFile (fd, file);
 		fclose (fd);

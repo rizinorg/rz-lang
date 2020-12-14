@@ -56,7 +56,7 @@ static int py_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 	ut8 *buf = (ut8*)rz_strbuf_get (&op->buf);
 	if (py_assemble_cb) {
 		PyObject *arglist = Py_BuildValue ("(zK)", str, a->pc);
-		PyObject *result = PyEval_CallObject (py_assemble_cb, arglist);
+		PyObject *result = PyObject_CallObject (py_assemble_cb, arglist);
 		if (check_list_result (result, "assemble")) {
 			seize = size = PyList_Size (result);
 			for (i = 0; i < size ; i++) {
@@ -87,7 +87,7 @@ static int py_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 		};
 		PyObject *memview = PyMemoryView_FromBuffer (&pybuf);
 		PyObject *arglist = Py_BuildValue ("(NK)", memview, a->pc);
-		PyObject *result = PyEval_CallObject (py_disassemble_cb, arglist);
+		PyObject *result = PyObject_CallObject (py_disassemble_cb, arglist);
 		if (check_list_result (result, "disassemble")) {
 			PyObject *pylen = PyList_GetItem (result, 0);
 			PyObject *pystr = PyList_GetItem (result, 1);
@@ -117,7 +117,7 @@ void Rizin_plugin_asm_free(RzAsmPlugin *ap) {
 
 PyObject *Rizin_plugin_asm(Rizin* self, PyObject *args) {
 	PyObject *arglist = Py_BuildValue ("(i)", 0);
-	PyObject *o = PyEval_CallObject (args, arglist);
+	PyObject *o = PyObject_CallObject (args, arglist);
 
 	RzAsmPlugin *ap = RZ_NEW0 (RzAsmPlugin);
 	if (!ap) {
