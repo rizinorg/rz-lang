@@ -15,7 +15,6 @@ typedef struct {
 } RzPlugins;
 
 RzPlugins plugins[] = {
-	{ "core", &Rizin_plugin_core },
 	{ "asm", &Rizin_plugin_asm },
 	{ "analysis", &Rizin_plugin_analysis },
 	{ "bin", &Rizin_plugin_bin },

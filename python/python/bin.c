@@ -9,7 +9,7 @@ typedef struct {
 	PyObject *bin_obj; /* RzBinFile->o->bin_obj */
 	PyObject *buf;  /* RzBinFile->buf */
 	ut64 size; /* RzBinFile->size */
-	ut64 loadaddr; /* RzBinFile->o->loadaddr */
+	ut64 loadaddr; /* RzBinFile->loadaddr */
 } PyBinFile;
 
 static void PyBinFile_dealloc(PyBinFile* self) {
@@ -159,7 +159,7 @@ PyObject* create_PyBinFile(RzBinFile *binfile)
 	}
 	if (binfile->o) {
 		((PyBinFile*)pb)->bin_obj = binfile->o->bin_obj;
-		((PyBinFile*)pb)->loadaddr = binfile->o->loadaddr;
+		((PyBinFile*)pb)->loadaddr = binfile->loadaddr;
 	}
 	ut64 buf_size;
 	const ut8 *buf_ptr = rz_buf_data (binfile->buf, &buf_size);
@@ -201,7 +201,6 @@ PyObject* create_PyBinFile(RzBinFile *binfile)
 		sec->format = getS (pysec, "format"); \
 		sec->bits = getI (pysec, "bits"); \
 		sec->has_strings = getI (pysec, "has_strings"); \
-		sec->add = getI (pysec, "add"); \
 		sec->is_data = getI (pysec, "is_data")
 
 // dict -> RzBinSymbol
@@ -411,7 +410,7 @@ static ut64 py_baddr(RzBinFile *arch) {
 	return 0;
 }
 
-static RzBinAddr* py_binsym(RzBinFile *arch, int sym) {
+static RzBinAddr* py_binsym(RzBinFile *arch, RzBinSpecialSymbol sym) {
 	RzBinAddr* ret = NULL;
 
 	if (!arch) return NULL;

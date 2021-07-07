@@ -169,7 +169,7 @@ static int py_analysis(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 		};
 		PyObject *memview = PyMemoryView_FromBuffer (&pybuf);
 		PyObject *arglist = Py_BuildValue ("(NK)", memview, addr);
-		PyObject *result = PyEval_CallObject (py_analysis_cb, arglist);
+		PyObject *result = PyObject_CallObject (py_analysis_cb, arglist);
 		if (result && PyList_Check (result)) {
 			PyObject *len = PyList_GetItem (result, 0);
 			PyObject *dict = PyList_GetItem (result, 1);
