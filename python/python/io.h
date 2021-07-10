@@ -8,6 +8,6 @@
 
 void Rizin_plugin_io_free(RzIOPlugin *ap);
 
-PyObject *Rizin_plugin_io(Rizin* self, PyObject *args);
+PyObject *Rizin_plugin_io(Rizin *self, PyObject *args);
 
 #endif /* _PY_IO_H */

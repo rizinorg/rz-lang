@@ -5,12 +5,13 @@
 
 void py_export_asm_enum(PyObject *tp_dict) {
 
-#define PYENUM(name) {\
+#define PYENUM(name) \
+	{ \
 		PyObject *o = PyLong_FromLong(name); \
 		if (o) { \
 			PyDict_SetItemString(tp_dict, #name, o); \
 			Py_DECREF(o); \
-		}\
+		} \
 	}
 
 	// RZ_SYS_ENDIAN_*
@@ -27,22 +28,22 @@ static void *py_disassemble_cb = NULL;
 
 static int check_list_result(PyObject *result, const char *fcn_name) {
 	if (!result) {
-		eprintf ("Error while calling %s in Python\n", fcn_name);
-		PyErr_Print ();
+		eprintf("Error while calling %s in Python\n", fcn_name);
+		PyErr_Print();
 		return 0;
 	}
-	if (!PyList_Check (result)) {
-		PyObject *str = PyObject_Str (result);
-		Py_DECREF (result);
+	if (!PyList_Check(result)) {
+		PyObject *str = PyObject_Str(result);
+		Py_DECREF(result);
 		if (!str) {
-			PyErr_Print ();
+			PyErr_Print();
 		} else {
-			if (PyUnicode_Check (str)) {
-				eprintf ("Unknown type returned from %s. List was expected, got %s.\n", fcn_name, PyUnicode_AsUTF8 (str));
+			if (PyUnicode_Check(str)) {
+				eprintf("Unknown type returned from %s. List was expected, got %s.\n", fcn_name, PyUnicode_AsUTF8(str));
 			} else {
-				eprintf ("Unknown type returned from %s. List was expected.\n", fcn_name);
+				eprintf("Unknown type returned from %s. List was expected.\n", fcn_name);
 			}
-			Py_DECREF (str);
+			Py_DECREF(str);
 		}
 		return 0;
 	}
@@ -53,21 +54,21 @@ static int py_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 	int i, size = 0;
 	int seize = -1;
 	const char *opstr = str;
-	ut8 *buf = (ut8*)rz_strbuf_get (&op->buf);
+	ut8 *buf = (ut8 *)rz_strbuf_get(&op->buf);
 	if (py_assemble_cb) {
-		PyObject *arglist = Py_BuildValue ("(zK)", str, a->pc);
-		PyObject *result = PyObject_CallObject (py_assemble_cb, arglist);
-		if (check_list_result (result, "assemble")) {
-			seize = size = PyList_Size (result);
-			for (i = 0; i < size ; i++) {
-				PyObject *len = PyList_GetItem (result, i);
-				buf[i] = PyNumber_AsSsize_t (len, NULL);
+		PyObject *arglist = Py_BuildValue("(zK)", str, a->pc);
+		PyObject *result = PyObject_CallObject(py_assemble_cb, arglist);
+		if (check_list_result(result, "assemble")) {
+			seize = size = PyList_Size(result);
+			for (i = 0; i < size; i++) {
+				PyObject *len = PyList_GetItem(result, i);
+				buf[i] = PyNumber_AsSsize_t(len, NULL);
 			}
-			Py_DECREF (result);
+			Py_DECREF(result);
 		}
 	}
 	op->size = size = seize;
-	rz_strbuf_set (&op->buf_asm, opstr);
+	rz_strbuf_set(&op->buf_asm, opstr);
 	//rz_hex_bin2str ((ut8*)rz_strbuf_get (&op->buf), op->size, rz_strbuf_get (&op->buf_hex));
 	return seize;
 }
@@ -75,78 +76,78 @@ static int py_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 static int py_disassemble(RzAsm *a, RzAsmOp *op, const ut8 *buf, int len) {
 	int size = 0;
 	int seize = -1;
-	rz_asm_op_init (op);
-	rz_strbuf_set (&op->buf_asm, "invalid");
+	rz_asm_op_init(op);
+	rz_strbuf_set(&op->buf_asm, "invalid");
 	if (py_disassemble_cb) {
 		Py_buffer pybuf = {
-			.buf = (void *) buf, // Warning: const is lost when casting
+			.buf = (void *)buf, // Warning: const is lost when casting
 			.len = len,
 			.readonly = 1,
 			.ndim = 1,
 			.itemsize = 1,
 		};
-		PyObject *memview = PyMemoryView_FromBuffer (&pybuf);
-		PyObject *arglist = Py_BuildValue ("(NK)", memview, a->pc);
-		PyObject *result = PyObject_CallObject (py_disassemble_cb, arglist);
-		if (check_list_result (result, "disassemble")) {
-			PyObject *pylen = PyList_GetItem (result, 0);
-			PyObject *pystr = PyList_GetItem (result, 1);
-			seize = PyNumber_AsSsize_t (pylen, NULL);
-			rz_strbuf_set (&op->buf_asm, PyUnicode_AsUTF8 (pystr));
-			Py_DECREF (result);
+		PyObject *memview = PyMemoryView_FromBuffer(&pybuf);
+		PyObject *arglist = Py_BuildValue("(NK)", memview, a->pc);
+		PyObject *result = PyObject_CallObject(py_disassemble_cb, arglist);
+		if (check_list_result(result, "disassemble")) {
+			PyObject *pylen = PyList_GetItem(result, 0);
+			PyObject *pystr = PyList_GetItem(result, 1);
+			seize = PyNumber_AsSsize_t(pylen, NULL);
+			rz_strbuf_set(&op->buf_asm, PyUnicode_AsUTF8(pystr));
+			Py_DECREF(result);
 		}
 	}
 	op->size = size = seize;
-	int buflen = RZ_MAX (1, op->size);
-	buflen = RZ_MIN (buflen, len);
-	char *res = calloc (buflen, 3);
+	int buflen = RZ_MAX(1, op->size);
+	buflen = RZ_MIN(buflen, len);
+	char *res = calloc(buflen, 3);
 	if (res) {
-		rz_asm_op_set_buf (op, buf, buflen);
-		free (res);
+		rz_asm_op_set_buf(op, buf, buflen);
+		free(res);
 	}
 	return seize;
 }
 
 void Rizin_plugin_asm_free(RzAsmPlugin *ap) {
-	free ((char *)ap->name);
-	free ((char *)ap->arch);
-	free ((char *)ap->license);
-	free ((char *)ap->desc);
-	free (ap);
+	free((char *)ap->name);
+	free((char *)ap->arch);
+	free((char *)ap->license);
+	free((char *)ap->desc);
+	free(ap);
 }
 
-PyObject *Rizin_plugin_asm(Rizin* self, PyObject *args) {
-	PyObject *arglist = Py_BuildValue ("(i)", 0);
-	PyObject *o = PyObject_CallObject (args, arglist);
+PyObject *Rizin_plugin_asm(Rizin *self, PyObject *args) {
+	PyObject *arglist = Py_BuildValue("(i)", 0);
+	PyObject *o = PyObject_CallObject(args, arglist);
 
-	RzAsmPlugin *ap = RZ_NEW0 (RzAsmPlugin);
+	RzAsmPlugin *ap = RZ_NEW0(RzAsmPlugin);
 	if (!ap) {
 		return NULL;
 	}
-	ap->name = getS (o,"name");
-	ap->arch = getS (o, "arch");
-	ap->license = getS (o, "license");
-	ap->desc = getS (o, "desc");
-	ap->bits = getI (o, "bits");
-	ap->endian = getI (o, "endian");
-	void *ptr = getF (o, "disassemble");
+	ap->name = getS(o, "name");
+	ap->arch = getS(o, "arch");
+	ap->license = getS(o, "license");
+	ap->desc = getS(o, "desc");
+	ap->bits = getI(o, "bits");
+	ap->endian = getI(o, "endian");
+	void *ptr = getF(o, "disassemble");
 	if (ptr) {
-		Py_INCREF (ptr);
+		Py_INCREF(ptr);
 		py_disassemble_cb = ptr;
 		ap->disassemble = py_disassemble;
 	}
-	ptr = getF (o, "assemble");
+	ptr = getF(o, "assemble");
 	if (ptr) {
-		Py_INCREF (ptr);
+		Py_INCREF(ptr);
 		py_assemble_cb = ptr;
 		ap->assemble = py_assemble;
 	}
-	Py_DECREF (o);
+	Py_DECREF(o);
 
-	RzLibStruct lp = {0};
+	RzLibStruct lp = { 0 };
 	lp.type = RZ_LIB_TYPE_ASM;
 	lp.data = ap;
 	lp.free = (void (*)(void *data))Rizin_plugin_asm_free;
-	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	rz_lib_open_ptr(core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }

@@ -10,6 +10,6 @@ void py_export_asm_enum(PyObject *tp_dict);
 
 void Rizin_plugin_asm_free(RzAsmPlugin *ap);
 
-PyObject *Rizin_plugin_asm(Rizin* self, PyObject *args);
+PyObject *Rizin_plugin_asm(Rizin *self, PyObject *args);
 
 #endif /* _PY_ASM_H */

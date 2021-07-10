@@ -10,6 +10,6 @@ PyObject *init_pybinfile_module(void);
 
 void Rizin_plugin_bin_free(RzBinPlugin *bp);
 
-PyObject *Rizin_plugin_bin(Rizin* self, PyObject *args);
+PyObject *Rizin_plugin_bin(Rizin *self, PyObject *args);
 
 #endif /* _PY_BIN_H */
