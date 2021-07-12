@@ -10,6 +10,6 @@ void py_export_analysis_enum(PyObject *tp_dict);
 
 void Rizin_plugin_analysis_free(RzAnalysisPlugin *ap);
 
-PyObject *Rizin_plugin_analysis(Rizin* self, PyObject *args);
+PyObject *Rizin_plugin_analysis(Rizin *self, PyObject *args);
 
 #endif /* _PY_ANALYSIS_H */

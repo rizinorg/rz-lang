@@ -11,29 +11,29 @@ static void *py_io_read_cb = NULL;
 static void *py_io_system_cb = NULL;
 static void *py_io_seek_cb = NULL;
 
-static RzIODesc* py_io_open(RzIO *io, const char *path, int rw, int mode) {
+static RzIODesc *py_io_open(RzIO *io, const char *path, int rw, int mode) {
 	if (py_io_open_cb) {
 		int fd = -1;
-		PyObject *arglist = Py_BuildValue ("(zii)", path, rw, mode);
-		PyObject *result = PyEval_CallObject (py_io_open_cb, arglist);
+		PyObject *arglist = Py_BuildValue("(zii)", path, rw, mode);
+		PyObject *result = PyObject_CallObject(py_io_open_cb, arglist);
 		if (result) {
-			if (PyLong_Check (result)) {
-				if (PyLong_AsLong (result) == -1) {
-					Py_DECREF (arglist);
-					Py_DECREF (result);
+			if (PyLong_Check(result)) {
+				if (PyLong_AsLong(result) == -1) {
+					Py_DECREF(arglist);
+					Py_DECREF(result);
 					return NULL;
 				}
-				fd = (int)PyLong_AsLong (result);
+				fd = (int)PyLong_AsLong(result);
 			}
-			if (PyBool_Check (result) && result == Py_False) {
-				Py_DECREF (arglist);
-				Py_DECREF (result);
+			if (PyBool_Check(result) && result == Py_False) {
+				Py_DECREF(arglist);
+				Py_DECREF(result);
 				return NULL;
 			}
 		}
-		Py_DECREF (arglist);
-		Py_DECREF (result);
-		return rz_io_desc_new (io, py_io_plugin, path, rw, mode, NULL);
+		Py_DECREF(arglist);
+		Py_DECREF(result);
+		return rz_io_desc_new(io, py_io_plugin, path, rw, mode, NULL);
 	}
 	return NULL;
 }
@@ -41,29 +41,29 @@ static RzIODesc* py_io_open(RzIO *io, const char *path, int rw, int mode) {
 static bool py_io_check(RzIO *io, const char *path, bool many) {
 	bool res = false;
 	if (py_io_check_cb) {
-		PyObject *arglist = Py_BuildValue ("(zO)", path, many?Py_True:Py_False);
-		PyObject *result = PyEval_CallObject (py_io_check_cb, arglist);
-		if (result && PyBool_Check (result)) {
+		PyObject *arglist = Py_BuildValue("(zO)", path, many ? Py_True : Py_False);
+		PyObject *result = PyObject_CallObject(py_io_check_cb, arglist);
+		if (result && PyBool_Check(result)) {
 			res = result == Py_True;
 		}
-		Py_DECREF (arglist);
-		Py_DECREF (result);
+		Py_DECREF(arglist);
+		Py_DECREF(result);
 	}
 	return res;
 }
 
 static ut64 py_io_seek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 	if (py_io_seek_cb) {
-		PyObject *arglist = Py_BuildValue ("(Ki)", offset, whence);
-		PyObject *result = PyEval_CallObject (py_io_seek_cb, arglist);
-		if (result && PyLong_Check (result)) {
-			return io->off = PyLong_AsLong (result);
+		PyObject *arglist = Py_BuildValue("(Ki)", offset, whence);
+		PyObject *result = PyObject_CallObject(py_io_seek_cb, arglist);
+		if (result && PyLong_Check(result)) {
+			return io->off = PyLong_AsLong(result);
 		}
-		if (result && PyLong_Check (result)) {
-			ut64 num = PyLong_AsLongLong (result);
+		if (result && PyLong_Check(result)) {
+			ut64 num = PyLong_AsLongLong(result);
 			return io->off = num;
 		}
-		 PyObject_Print(result, stderr, 0);
+		PyObject_Print(result, stderr, 0);
 		//eprintf ("SEEK Unknown type returned. Number was expected.\n");
 		switch (whence) {
 		case 0: return io->off = offset;
@@ -79,124 +79,123 @@ static int py_io_read(RzIO *io, RzIODesc *fd, ut8 *buf, int count) {
 	if (!py_io_read_cb) {
 		return -1;
 	}
-	PyObject *arglist = Py_BuildValue ("(Ki)", io->off, count);
-	PyObject *result = PyEval_CallObject (py_io_read_cb, arglist);
+	PyObject *arglist = Py_BuildValue("(Ki)", io->off, count);
+	PyObject *result = PyObject_CallObject(py_io_read_cb, arglist);
 	if (result) {
-		if (PyByteArray_Check (result)) {
-			const char *ptr = PyByteArray_AsString (result);
-			ssize_t size = PyByteArray_Size (result);
-			ssize_t limit = RZ_MIN (size, (ssize_t)count);
-			memset (buf, io->Oxff, limit);
-			memcpy (buf, ptr, limit);
+		if (PyByteArray_Check(result)) {
+			const char *ptr = PyByteArray_AsString(result);
+			ssize_t size = PyByteArray_Size(result);
+			ssize_t limit = RZ_MIN(size, (ssize_t)count);
+			memset(buf, io->Oxff, limit);
+			memcpy(buf, ptr, limit);
 			count = (int)limit;
-		} else if (PyUnicode_Check (result)) {
+		} else if (PyUnicode_Check(result)) {
 			//  PyObject* repr = PyObject_Repr(result);
 			//  PyObject* str = PyUnicode_AsEncodedString(repr, "utf-8", "~E~");
 			ssize_t size;
-			const char *ptr = PyUnicode_AsUTF8AndSize (result, &size);
-			ssize_t limit = RZ_MIN (size, (ssize_t)count);
-			memset (buf, io->Oxff, limit);
-			memcpy (buf, ptr, limit);
+			const char *ptr = PyUnicode_AsUTF8AndSize(result, &size);
+			ssize_t limit = RZ_MIN(size, (ssize_t)count);
+			memset(buf, io->Oxff, limit);
+			memcpy(buf, ptr, limit);
 			count = (int)limit;
-		} else if (PyBytes_Check (result)) {
-			size_t size = PyBytes_Size (result);
-			size_t limit = RZ_MIN (size, (size_t)count);
-			memset (buf, io->Oxff, limit);
-			memcpy (buf, PyBytes_AS_STRING (result), limit);
+		} else if (PyBytes_Check(result)) {
+			size_t size = PyBytes_Size(result);
+			size_t limit = RZ_MIN(size, (size_t)count);
+			memset(buf, io->Oxff, limit);
+			memcpy(buf, PyBytes_AS_STRING(result), limit);
 			// eprintf ("result is a string DONE %d %d\n" , count, size);
 			count = (int)limit;
-		} else if (PyList_Check (result)) {
-			int i, size = PyList_Size (result);
-			int limit = RZ_MIN (size, count);
-			memset (buf, io->Oxff, count);
+		} else if (PyList_Check(result)) {
+			int i, size = PyList_Size(result);
+			int limit = RZ_MIN(size, count);
+			memset(buf, io->Oxff, count);
 			for (i = 0; i < limit; i++) {
-				PyObject *len = PyList_GetItem (result, i);
-				buf[i] = PyNumber_AsSsize_t (len, NULL);
+				PyObject *len = PyList_GetItem(result, i);
+				buf[i] = PyNumber_AsSsize_t(len, NULL);
 			}
 			count = (int)limit;
 		}
 	} else {
-		eprintf ("Unknown type returned. List was expected.\n");
+		eprintf("Unknown type returned. List was expected.\n");
 	}
-	Py_DECREF (arglist);
-	Py_DECREF (result);
+	Py_DECREF(arglist);
+	Py_DECREF(result);
 	return count;
 }
 
 static char *py_io_system(RzIO *io, RzIODesc *desc, const char *cmd) {
-	char * res = NULL;
+	char *res = NULL;
 	if (py_io_system_cb) {
-		PyObject *arglist = Py_BuildValue ("(z)", cmd);
-		PyObject *result = PyEval_CallObject (py_io_system_cb, arglist);
+		PyObject *arglist = Py_BuildValue("(z)", cmd);
+		PyObject *result = PyObject_CallObject(py_io_system_cb, arglist);
 		if (result) {
 			if (
-			PyUnicode_Check (result)
-			) {
-				res = PyBytes_AS_STRING (result);
-			} else if (PyBool_Check (result)) {
-				res = strdup (rz_str_bool (result == Py_True));
-			} else if (PyLong_Check (result)) {
-				long n = PyLong_AsLong (result);
-				res = rz_str_newf ("%ld", n);
+				PyUnicode_Check(result)) {
+				res = PyBytes_AS_STRING(result);
+			} else if (PyBool_Check(result)) {
+				res = strdup(rz_str_bool(result == Py_True));
+			} else if (PyLong_Check(result)) {
+				long n = PyLong_AsLong(result);
+				res = rz_str_newf("%ld", n);
 			}
 		}
 		// PyObject_Print(result, stderr, 0);
-		eprintf ("Unknown type returned. Boolean was expected.\n");
-		Py_DECREF (arglist);
-		Py_DECREF (result);
+		eprintf("Unknown type returned. Boolean was expected.\n");
+		Py_DECREF(arglist);
+		Py_DECREF(result);
 	}
 	return res;
 }
 
 void Rizin_plugin_io_free(RzIOPlugin *ap) {
-	free ((char *)ap->name);
-	free ((char *)ap->desc);
-	free ((char *)ap->license);
-	free (ap);
+	free((char *)ap->name);
+	free((char *)ap->desc);
+	free((char *)ap->license);
+	free(ap);
 }
 
-PyObject *Rizin_plugin_io(Rizin* self, PyObject *args) {
+PyObject *Rizin_plugin_io(Rizin *self, PyObject *args) {
 	void *ptr = NULL;
 	PyObject *arglist = Py_BuildValue("(i)", 0);
-	PyObject *o = PyEval_CallObject (args, arglist);
+	PyObject *o = PyObject_CallObject(args, arglist);
 
-	RzIOPlugin *ap = RZ_NEW0 (RzIOPlugin);
+	RzIOPlugin *ap = RZ_NEW0(RzIOPlugin);
 	if (!ap) {
 		return Py_False;
 	}
 	py_io_plugin = ap;
-	ap->name = getS (o, "name");
-	ap->desc = getS (o, "desc");
-	ap->license = getS (o, "license");
+	ap->name = getS(o, "name");
+	ap->desc = getS(o, "desc");
+	ap->license = getS(o, "license");
 
-	ptr = getF (o, "open");
+	ptr = getF(o, "open");
 	if (ptr) {
-		Py_INCREF (ptr);
-		py_io_open_cb = (void*)ptr;
+		Py_INCREF(ptr);
+		py_io_open_cb = (void *)ptr;
 		ap->open = py_io_open;
 	}
-	ptr = getF (o, "check");
+	ptr = getF(o, "check");
 	if (ptr) {
-		Py_INCREF (ptr);
-		py_io_check_cb = (void*)ptr;
+		Py_INCREF(ptr);
+		py_io_check_cb = (void *)ptr;
 		ap->check = py_io_check;
 	}
-	ptr = getF (o, "read");
+	ptr = getF(o, "read");
 	if (ptr) {
-		Py_INCREF (ptr);
-		py_io_read_cb = (void*)ptr;
+		Py_INCREF(ptr);
+		py_io_read_cb = (void *)ptr;
 		ap->read = py_io_read;
 	}
-	ptr = getF (o, "system");
+	ptr = getF(o, "system");
 	if (ptr) {
-		Py_INCREF (ptr);
-		py_io_system_cb = (void*)ptr;
+		Py_INCREF(ptr);
+		py_io_system_cb = (void *)ptr;
 		ap->system = py_io_system;
 	}
-	ptr = getF (o, "seek");
+	ptr = getF(o, "seek");
 	if (ptr) {
-		Py_INCREF (ptr);
-		py_io_seek_cb = (void*)ptr;
+		Py_INCREF(ptr);
+		py_io_seek_cb = (void *)ptr;
 		ap->lseek = py_io_seek;
 	}
 #if 0
@@ -204,13 +203,12 @@ PyObject *Rizin_plugin_io(Rizin* self, PyObject *args) {
 	ptr = getF (o, "write");
 	ptr = getF (o, "resize");
 #endif
-	Py_DECREF (o);
+	Py_DECREF(o);
 
 	RzLibStruct lp = {};
 	lp.type = RZ_LIB_TYPE_IO;
 	lp.data = ap;
 	lp.free = (void (*)(void *data))Rizin_plugin_io_free;
-	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	rz_lib_open_ptr(core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }
-

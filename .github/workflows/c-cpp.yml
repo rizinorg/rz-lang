@@ -13,14 +13,13 @@ jobs:
     - name: Install python
       run: sudo apt-get --assume-yes install python3-wheel python3-setuptools python3-dev ninja-build
     - name: Install meson and ninja
-      run: pip3 install --user meson PyYAML
+      run: sudo pip3 install meson PyYAML ninja
     - uses: actions/checkout@v2
     - name: rizin
       run: |
-          git clone --recursive --depth=1 https://github.com/rizinorg/rizin
+          git clone --depth=1 https://github.com/rizinorg/rizin
           cd rizin
-          export PATH=${HOME}/.local/bin:${PATH}
-          meson --prefix=/usr build
+          meson --buildtype=release --prefix=/usr build
           ninja -C build
           sudo ninja -C build install
           cd ..

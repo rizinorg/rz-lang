@@ -5,6 +5,8 @@
 #include <rz_lib.h>
 #include <rz_lang.h>
 
+#undef HAVE_SIGACTION
+
 #undef _GNU_SOURCE
 #undef _XOPEN_SOURCE
 #undef _POSIX_C_SOURCE
@@ -13,14 +15,14 @@
 #include <Python.h>
 #include <structmember.h>
 
-#if PY_MAJOR_VERSION<3
+#if PY_MAJOR_VERSION < 3
 #error Python 2 support is deprecated, use Python 3 instead
 #endif
 
 typedef struct {
 	PyObject_HEAD
-	PyObject *first; /* first name */
-	PyObject *last;  /* last name */
+		PyObject *first; /* first name */
+	PyObject *last; /* last name */
 	int number;
 } Rizin;
 

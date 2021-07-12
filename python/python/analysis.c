@@ -7,12 +7,13 @@
 
 void py_export_analysis_enum(PyObject *tp_dict) {
 
-#define PYENUM(name) {\
+#define PYENUM(name) \
+	{ \
 		PyObject *o = PyLong_FromLong(name); \
 		if (o) { \
 			PyDict_SetItemString(tp_dict, #name, o); \
 			Py_DECREF(o); \
-		}\
+		} \
 	}
 
 	// RZ_ANALYSIS_OP_FAMILY_*
@@ -106,29 +107,28 @@ void py_export_analysis_enum(PyObject *tp_dict) {
 
 #define READ_REG(dict, reg) \
 	if (dict && PyDict_Check(dict)) { \
-		reg->name = getS (dict, "name"); \
-		reg->type = getI (dict, "type"); \
-		reg->size = getI (dict, "size"); \
-		reg->offset = getI (dict, "offset"); \
-		reg->packed_size = getI (dict, "packed_size"); \
-		reg->is_float = getB (dict, "is_float"); \
-		reg->flags = getS (dict, "flags"); \
-		reg->index = getI (dict, "index"); \
-		reg->arena = getI (dict, "arena"); \
+		reg->name = getS(dict, "name"); \
+		reg->type = getI(dict, "type"); \
+		reg->size = getI(dict, "size"); \
+		reg->offset = getI(dict, "offset"); \
+		reg->packed_size = getI(dict, "packed_size"); \
+		reg->is_float = getB(dict, "is_float"); \
+		reg->flags = getS(dict, "flags"); \
+		reg->index = getI(dict, "index"); \
+		reg->arena = getI(dict, "arena"); \
 	}
 
 #define READ_VAL(dict, val, tmpreg) \
 	if (dict && PyDict_Check(dict)) { \
-		val->absolute = getI (dict, "absolute"); \
-		val->memref = getI (dict, "memref"); \
-		val->base = getI (dict, "base"); \
-		val->delta = getI (dict, "delta"); \
-		val->imm = getI (dict, "imm"); \
-		val->mul = getI (dict, "mul"); \
-		val->seg = getI (dict, "seg"); \
-		tmpreg = getO (dict, "reg"); \
+		val->absolute = getI(dict, "absolute"); \
+		val->memref = getI(dict, "memref"); \
+		val->base = getI(dict, "base"); \
+		val->delta = getI(dict, "delta"); \
+		val->imm = getI(dict, "imm"); \
+		val->mul = getI(dict, "mul"); \
+		tmpreg = getO(dict, "reg"); \
 		READ_REG(tmpreg, val->reg) \
-		tmpreg = getO (dict, "regdelta"); \
+		tmpreg = getO(dict, "regdelta"); \
 		READ_REG(tmpreg, val->regdelta) \
 	}
 
@@ -139,12 +139,12 @@ static void *py_archinfo_cb = NULL;
 static bool py_set_reg_profile(RzAnalysis *a) {
 	const char *profstr = "";
 	if (py_set_reg_profile_cb) {
-		PyObject *result = PyObject_CallObject (py_set_reg_profile_cb, NULL);
+		PyObject *result = PyObject_CallObject(py_set_reg_profile_cb, NULL);
 		if (result) {
-			profstr = PyUnicode_AsUTF8 (result);
-			return rz_reg_set_profile_string (a->reg, profstr);
+			profstr = PyUnicode_AsUTF8(result);
+			return rz_reg_set_profile_string(a->reg, profstr);
 		} else {
-			eprintf ("Unknown type returned. String was expected.\n");
+			eprintf("Unknown type returned. String was expected.\n");
 			PyErr_Print();
 		}
 	}
@@ -156,58 +156,59 @@ static int py_analysis(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 	int size = 0;
 	int seize = -1;
 	int i = 0;
-	if (!op) return -1;
+	if (!op)
+		return -1;
 	if (py_analysis_cb) {
-		memset(op, 0, sizeof (RzAnalysisOp));
+		memset(op, 0, sizeof(RzAnalysisOp));
 		// anal(addr, buf) - returns size + dictionary (structure) for RzAnalysisOp
 		Py_buffer pybuf = {
-			.buf = (void *) buf, // Warning: const is lost when casting
+			.buf = (void *)buf, // Warning: const is lost when casting
 			.len = len,
 			.readonly = 1,
 			.ndim = 1,
 			.itemsize = 1,
 		};
-		PyObject *memview = PyMemoryView_FromBuffer (&pybuf);
-		PyObject *arglist = Py_BuildValue ("(NK)", memview, addr);
-		PyObject *result = PyEval_CallObject (py_analysis_cb, arglist);
-		if (result && PyList_Check (result)) {
-			PyObject *len = PyList_GetItem (result, 0);
-			PyObject *dict = PyList_GetItem (result, 1);
-			if (dict && PyDict_Check (dict)) {
-				seize = PyNumber_AsSsize_t (len, NULL);
-				op->type = getI (dict, "type");
-				op->cycles = getI (dict, "cycles");
+		PyObject *memview = PyMemoryView_FromBuffer(&pybuf);
+		PyObject *arglist = Py_BuildValue("(NK)", memview, addr);
+		PyObject *result = PyObject_CallObject(py_analysis_cb, arglist);
+		if (result && PyList_Check(result)) {
+			PyObject *len = PyList_GetItem(result, 0);
+			PyObject *dict = PyList_GetItem(result, 1);
+			if (dict && PyDict_Check(dict)) {
+				seize = PyNumber_AsSsize_t(len, NULL);
+				op->type = getI(dict, "type");
+				op->cycles = getI(dict, "cycles");
 				op->size = seize;
-				op->addr = getI (dict, "addr");
-				op->delay = getI (dict, "delay");
-				op->jump = getI (dict, "jump");
-				op->fail = getI (dict, "fail");
-				op->stackop = getI (dict, "stackop");
-				op->stackptr = getI (dict, "stackptr");
-				op->ptr = getI (dict, "ptr");
-				op->eob = getB (dict, "eob");
+				op->addr = getI(dict, "addr");
+				op->delay = getI(dict, "delay");
+				op->jump = getI(dict, "jump");
+				op->fail = getI(dict, "fail");
+				op->stackop = getI(dict, "stackop");
+				op->stackptr = getI(dict, "stackptr");
+				op->ptr = getI(dict, "ptr");
+				op->eob = getB(dict, "eob");
 				// Loading 'src' and 'dst' values
 				// SRC is is a list of 3 elements
-				PyObject *tmpsrc = getO (dict, "src");
-				if (tmpsrc && PyList_Check (tmpsrc)) {
+				PyObject *tmpsrc = getO(dict, "src");
+				if (tmpsrc && PyList_Check(tmpsrc)) {
 					for (i = 0; i < 3; i++) {
-						PyObject *tmplst = PyList_GetItem (tmpsrc, i);
+						PyObject *tmplst = PyList_GetItem(tmpsrc, i);
 						// Read value and underlying regs
 						READ_VAL(tmplst, op->src[i], tmpreg)
 					}
 				}
-				PyObject *tmpdst = getO (dict, "dst");
+				PyObject *tmpdst = getO(dict, "dst");
 				// Read value and underlying regs
 				READ_VAL(tmpdst, op->dst, tmpreg)
 				// Loading 'var' value if presented
-				rz_strbuf_set (&op->esil, getS (dict, "esil"));
-				op->mnemonic = rz_str_new (getS (dict, "mnemonic"));
+				rz_strbuf_set(&op->esil, getS(dict, "esil"));
+				op->mnemonic = rz_str_new(getS(dict, "mnemonic"));
 				// TODO: Add opex support here
-				Py_DECREF (dict);
+				Py_DECREF(dict);
 			}
-			Py_DECREF (result);
+			Py_DECREF(result);
 		} else {
-			eprintf ("Unknown type returned. List was expected.\n");
+			eprintf("Unknown type returned. List was expected.\n");
 			PyErr_Print();
 		}
 	}
@@ -217,60 +218,60 @@ static int py_analysis(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 
 static int py_archinfo(RzAnalysis *a, int query) {
 	if (py_archinfo_cb) {
-		PyObject *arglist = Py_BuildValue ("(i)", query);
-		PyObject *result = PyEval_CallObject (py_archinfo_cb, arglist);
+		PyObject *arglist = Py_BuildValue("(i)", query);
+		PyObject *result = PyObject_CallObject(py_archinfo_cb, arglist);
 		if (result) {
-			return PyLong_AsLong (result); /* Python only returns long... */
+			return PyLong_AsLong(result); /* Python only returns long... */
 		}
-		eprintf ("Unknown type returned. Int was expected.\n");
+		eprintf("Unknown type returned. Int was expected.\n");
 	}
 	return -1;
 }
 
 void Rizin_plugin_analysis_free(RzAnalysisPlugin *ap) {
-	free ((char *)ap->name);
-	free ((char *)ap->arch);
-	free ((char *)ap->license);
-	free ((char *)ap->desc);
-	free (ap);
+	free((char *)ap->name);
+	free((char *)ap->arch);
+	free((char *)ap->license);
+	free((char *)ap->desc);
+	free(ap);
 }
 
-PyObject *Rizin_plugin_analysis(Rizin* self, PyObject *args) {
+PyObject *Rizin_plugin_analysis(Rizin *self, PyObject *args) {
 	void *ptr = NULL;
 	PyObject *arglist = Py_BuildValue("(i)", 0);
-	PyObject *o = PyObject_CallObject (args, arglist);
+	PyObject *o = PyObject_CallObject(args, arglist);
 
-	RzAnalysisPlugin *ap = RZ_NEW0 (RzAnalysisPlugin);
-	ap->name = getS (o,"name");
-	ap->arch = getS (o, "arch");
-	ap->license = getS (o, "license");
-	ap->desc = getS (o, "desc");
-	ap->bits = getI (o, "bits");
-	ap->esil = getI (o, "esil");
-	ptr = getF (o, "op");
+	RzAnalysisPlugin *ap = RZ_NEW0(RzAnalysisPlugin);
+	ap->name = getS(o, "name");
+	ap->arch = getS(o, "arch");
+	ap->license = getS(o, "license");
+	ap->desc = getS(o, "desc");
+	ap->bits = getI(o, "bits");
+	ap->esil = getI(o, "esil");
+	ptr = getF(o, "op");
 	if (ptr) {
-		Py_INCREF (ptr);
+		Py_INCREF(ptr);
 		py_analysis_cb = ptr;
 		ap->op = py_analysis;
 	}
-	ptr = getF (o, "set_reg_profile");
+	ptr = getF(o, "set_reg_profile");
 	if (ptr) {
-		Py_INCREF (ptr);
+		Py_INCREF(ptr);
 		py_set_reg_profile_cb = ptr;
 		ap->set_reg_profile = py_set_reg_profile;
 	}
-	ptr = getF (o, "archinfo");
+	ptr = getF(o, "archinfo");
 	if (ptr) {
-		Py_INCREF (ptr);
+		Py_INCREF(ptr);
 		py_archinfo_cb = ptr;
 		ap->archinfo = py_archinfo;
 	}
-	Py_DECREF (o);
+	Py_DECREF(o);
 
 	RzLibStruct lp = {};
 	lp.type = RZ_LIB_TYPE_ANALYSIS;
 	lp.data = ap;
 	lp.free = (void (*)(void *data))Rizin_plugin_analysis_free;
-	rz_lib_open_ptr (core->lib, "python.py", NULL, &lp);
+	rz_lib_open_ptr(core->lib, "python.py", NULL, &lp);
 	Py_RETURN_TRUE;
 }
