@@ -12,7 +12,7 @@ PYLDFLAGS=$(shell PYVER=3 ./python-config-wrapper --libs --embed || \
 PYLDFLAGS+=$(shell PYVER=3 ./python-config-wrapper --ldflags)
 PYLDFLAGS+=${LDFLAGS_LIB}
 
-lang_python.$(EXT_SO):
+lang_python.$(EXT_SO): python.c python/*.c python/*.h
 	${CC} python.c python/*.c ${CFLAGS} ${PYCFLAGS} ${PYLDFLAGS} \
 	$(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" pkg-config --cflags --libs rz_reg rz_core rz_cons) \
 	${LDFLAGS} ${LDFLAGS_LIB} -fPIC -o lang_python.$(EXT_SO)

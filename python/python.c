@@ -9,6 +9,8 @@
 #include "python/bin.h"
 #define PLUGIN_NAME rz_lang_plugin_python
 
+RzCore *core;
+
 typedef struct {
 	const char *type;
 	PyObject *(*handler)(Rizin *, PyObject *);
@@ -47,7 +49,7 @@ static char *py_nullstr = "";
 static void Rizin_dealloc(Rizin *self) {
 	Py_XDECREF(self->first);
 	Py_XDECREF(self->last);
-	//self->ob_type->tp_free((PyObject*)self);
+	// self->ob_type->tp_free((PyObject*)self);
 }
 
 static PyObject *Rizin_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -177,7 +179,7 @@ static PyTypeObject RizinType = {
 };
 
 /*
-SEE 
+SEE
 static PyMethodDef EmbMethods[] = {
     {"numargs", emb_numargs, METH_VARARGS,
      "Return the number of arguments received by the process."},

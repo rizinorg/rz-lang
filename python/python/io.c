@@ -3,6 +3,8 @@
 #include "io.h"
 #include "core.h"
 
+extern RzCore *core;
+
 /* rz_io */
 static RzIOPlugin *py_io_plugin = NULL;
 static void *py_io_open_cb = NULL;
@@ -64,7 +66,7 @@ static ut64 py_io_seek(RzIO *io, RzIODesc *fd, ut64 offset, int whence) {
 			return io->off = num;
 		}
 		PyObject_Print(result, stderr, 0);
-		//eprintf ("SEEK Unknown type returned. Number was expected.\n");
+		// eprintf ("SEEK Unknown type returned. Number was expected.\n");
 		switch (whence) {
 		case 0: return io->off = offset;
 		case 1: return io->off += offset;

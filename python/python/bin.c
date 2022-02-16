@@ -3,6 +3,8 @@
 #include "bin.h"
 #include "core.h"
 
+extern RzCore *core;
+
 /* The structure, representing simplified version of RzBinFile/RzBinObject */
 typedef struct {
 	PyObject_HEAD

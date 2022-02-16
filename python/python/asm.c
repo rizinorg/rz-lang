@@ -3,6 +3,8 @@
 #include "asm.h"
 #include "core.h"
 
+extern RzCore *core;
+
 void py_export_asm_enum(PyObject *tp_dict) {
 
 #define PYENUM(name) \
@@ -69,7 +71,7 @@ static int py_assemble(RzAsm *a, RzAsmOp *op, const char *str) {
 	}
 	op->size = size = seize;
 	rz_strbuf_set(&op->buf_asm, opstr);
-	//rz_hex_bin2str ((ut8*)rz_strbuf_get (&op->buf), op->size, rz_strbuf_get (&op->buf_hex));
+	// rz_hex_bin2str ((ut8*)rz_strbuf_get (&op->buf), op->size, rz_strbuf_get (&op->buf_hex));
 	return seize;
 }
 

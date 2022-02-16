@@ -5,6 +5,8 @@
 #include "analysis.h"
 #include "core.h"
 
+extern RzCore *core;
+
 void py_export_analysis_enum(PyObject *tp_dict) {
 
 #define PYENUM(name) \
