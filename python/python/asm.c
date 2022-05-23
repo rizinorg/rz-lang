@@ -1,4 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2019 - pancake */
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "asm.h"
 #include "core.h"
@@ -30,7 +31,7 @@ static void *py_disassemble_cb = NULL;
 
 static int check_list_result(PyObject *result, const char *fcn_name) {
 	if (!result) {
-		eprintf("Error while calling %s in Python\n", fcn_name);
+		RZ_LOG_ERROR("Error while calling %s in Python\n", fcn_name);
 		PyErr_Print();
 		return 0;
 	}
@@ -41,9 +42,9 @@ static int check_list_result(PyObject *result, const char *fcn_name) {
 			PyErr_Print();
 		} else {
 			if (PyUnicode_Check(str)) {
-				eprintf("Unknown type returned from %s. List was expected, got %s.\n", fcn_name, PyUnicode_AsUTF8(str));
+				RZ_LOG_ERROR("Unknown type returned from %s. List was expected, got %s.\n", fcn_name, PyUnicode_AsUTF8(str));
 			} else {
-				eprintf("Unknown type returned from %s. List was expected.\n", fcn_name);
+				RZ_LOG_ERROR("Unknown type returned from %s. List was expected.\n", fcn_name);
 			}
 			Py_DECREF(str);
 		}

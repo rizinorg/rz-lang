@@ -1,0 +1,84 @@
+name: RzLang
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+        matrix:
+            name: [ubuntu-latest, windows-latest, macos-latest]
+            include:
+              - name: windows-latest
+                compiler: cl
+                meson_options: --default-library=static -Db_vscrt=static_from_buildtype -Dportable=true
+                bits: 64
+
+    runs-on: ${{ matrix.name }}
+    steps:
+      - uses: actions/setup-python@v2
+      - name: Install Meson + Ninja (Linux)
+        if: matrix.name == 'ubuntu-latest'
+        run: sudo pip3 install meson ninja
+      - name: Install Meson + Ninja (Windows)
+        if: matrix.name == 'windows-latest'
+        run: pip install meson ninja
+      - name: Install Meson + Ninja (MacOS)
+        if: matrix.name == 'macos-latest'
+        run: sudo pip install meson ninja
+
+      - name: Install pkg-config (Windows)
+        if: matrix.name == 'windows-latest'
+        shell: pwsh
+        run: choco install -y pkgconfiglite
+
+      - uses: actions/checkout@v2
+      - name: rizin fetch
+        run: git clone --depth=1 https://github.com/rizinorg/rizin
+
+      - name: rizin build (UNIX)
+        if: matrix.name != 'windows-latest'
+        run: |
+            meson --buildtype=release build
+            ninja -C build
+        working-directory: rizin
+
+      - name: rizin build (Windows)
+        if: matrix.name == 'windows-latest'
+        shell: pwsh
+        run: |
+            .\dist\windows\vsdevenv.ps1 64
+            meson --buildtype=release build
+            ninja -C build
+        working-directory: rizin
+
+      - name: rizin install (Windows)
+        if: matrix.name == 'windows-latest'
+        run: ninja -C build install
+        working-directory: rizin
+      - name: rizin install (UNIX)
+        if: matrix.name != 'windows-latest'
+        run: sudo ninja -C build install
+        working-directory: rizin
+
+      - name: Python plugin build
+        run: |
+            meson --buildtype=release build
+            ninja -C build
+        working-directory: python
+
+      - name: Python plugin install (Windows)
+        if: matrix.name == 'windows-latest'
+        run: ninja -C build install
+        working-directory: python
+      - name: Python plugin install (UNIX)
+        if: matrix.name != 'windows-latest'
+        run: sudo ninja -C build install
+        working-directory: python
+
+      - name: Testing
+        run: rz-test -L db/extras
+        working-directory: test
