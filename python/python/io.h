@@ -1,4 +1,7 @@
-/* rizin - LGPL - Copyright 2017-2019 - pancake, xvilka, aronsky */
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2019 aronsky <aronsky@gmail.com>
+// SPDX-FileCopyrightText: 2017-2019 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #ifndef _PY_IO_H
 #define _PY_IO_H

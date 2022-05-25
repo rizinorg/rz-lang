@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017-2019 - pancake, xvilka */
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 // Exporting the RZ_analysis_* enum constants
 #include <rz_reg.h>
@@ -134,23 +136,23 @@ void py_export_analysis_enum(PyObject *tp_dict) {
 		READ_REG(tmpreg, val->regdelta) \
 	}
 
-static void *py_set_reg_profile_cb = NULL;
+static void *py_get_reg_profile_cb = NULL;
 static void *py_analysis_cb = NULL;
 static void *py_archinfo_cb = NULL;
 
-static bool py_set_reg_profile(RzAnalysis *a) {
+static char *py_get_reg_profile(RzAnalysis *a) {
 	const char *profstr = "";
-	if (py_set_reg_profile_cb) {
-		PyObject *result = PyObject_CallObject(py_set_reg_profile_cb, NULL);
+	if (py_get_reg_profile_cb) {
+		PyObject *result = PyObject_CallObject(py_get_reg_profile_cb, NULL);
 		if (result) {
 			profstr = PyUnicode_AsUTF8(result);
-			return rz_reg_set_profile_string(a->reg, profstr);
+			return strdup(profstr);
 		} else {
-			eprintf("Unknown type returned. String was expected.\n");
+			RZ_LOG_ERROR("Unknown type returned. String was expected.\n");
 			PyErr_Print();
 		}
 	}
-	return -1;
+	return NULL;
 }
 
 static int py_analysis(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *buf, int len, RzAnalysisOpMask mask) {
@@ -210,7 +212,7 @@ static int py_analysis(RzAnalysis *a, RzAnalysisOp *op, ut64 addr, const ut8 *bu
 			}
 			Py_DECREF(result);
 		} else {
-			eprintf("Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("Unknown type returned. List was expected.\n");
 			PyErr_Print();
 		}
 	}
@@ -225,7 +227,7 @@ static int py_archinfo(RzAnalysis *a, int query) {
 		if (result) {
 			return PyLong_AsLong(result); /* Python only returns long... */
 		}
-		eprintf("Unknown type returned. Int was expected.\n");
+		RZ_LOG_ERROR("Unknown type returned. Int was expected.\n");
 	}
 	return -1;
 }
@@ -256,11 +258,11 @@ PyObject *Rizin_plugin_analysis(Rizin *self, PyObject *args) {
 		py_analysis_cb = ptr;
 		ap->op = py_analysis;
 	}
-	ptr = getF(o, "set_reg_profile");
+	ptr = getF(o, "get_reg_profile");
 	if (ptr) {
 		Py_INCREF(ptr);
-		py_set_reg_profile_cb = ptr;
-		ap->set_reg_profile = py_set_reg_profile;
+		py_get_reg_profile_cb = ptr;
+		ap->get_reg_profile = py_get_reg_profile;
 	}
 	ptr = getF(o, "archinfo");
 	if (ptr) {

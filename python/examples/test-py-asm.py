@@ -14,7 +14,7 @@ def pyasm(a):
 		print("Assembling %s"%(s))
 		return [ 1, 2, 3, 4 ]
 
-	def disassemble(buf, buflen, pc):
+	def disassemble(buf, pc):
 		try:
 			return [ 2, f"opcode {buf[0]}" ]
 		except:
@@ -33,4 +33,4 @@ def pyasm(a):
 
 if not rzlang.plugin("asm", pyasm):
 	print("Failed to register the python asm plugin.")
-	
+

@@ -1,4 +1,6 @@
-/* rizin - LGPL - Copyright 2017-2019 - xvilka, pancake */
+// SPDX-FileCopyrightText: 2017-2019 pancake <pancake@nopcode.org>
+// SPDX-FileCopyrightText: 2017-2022 Anton Kochkov <anton.kochkov@gmail.com>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "bin.h"
 #include "core.h"
@@ -8,7 +10,7 @@ extern RzCore *core;
 /* The structure, representing simplified version of RzBinFile/RzBinObject */
 typedef struct {
 	PyObject_HEAD
-		PyObject *bin_obj; /* RzBinFile->o->bin_obj */
+	PyObject *bin_obj; /* RzBinFile->o->bin_obj */
 	PyObject *buf; /* RzBinFile->buf */
 	ut64 size; /* RzBinFile->size */
 	ut64 loadaddr; /* RzBinFile->loadaddr */
@@ -139,7 +141,7 @@ PyObject *init_pybinfile_module(void) {
 	}
 	PyObject *m = PyModule_Create(&PyBinModule);
 	if (!m) {
-		eprintf("Cannot create python3 RzBinFile module\n");
+		RZ_LOG_ERROR("Cannot create python3 RzBinFile module\n");
 		return NULL;
 	}
 	return m;
@@ -297,7 +299,7 @@ static void *py_binsym_cb = NULL;
 static void *py_entries_cb = NULL;
 static void *py_info_cb = NULL;
 
-static bool py_load_buffer(RzBinFile *arch, void **bin_obj, RzBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+static bool py_load_buffer(RzBinFile *arch, RzBinObject *bin_obj, RzBuffer *buf, Sdb *sdb) {
 	int rres = 0;
 	ut64 size = 0;
 	const ut8 *buf_data = rz_buf_data(buf, &size);
@@ -316,19 +318,18 @@ static bool py_load_buffer(RzBinFile *arch, void **bin_obj, RzBuffer *buf, ut64 
 			.itemsize = 1,
 		};
 		PyObject *memview = PyMemoryView_FromBuffer(&pybuf);
-		PyObject *arglist = Py_BuildValue("(O,N,K)", pybinfile, memview, loadaddr);
+		PyObject *arglist = Py_BuildValue("(O,N)", pybinfile, memview);
 		if (!arglist) {
 			PyErr_Print();
 			return false;
-		}
-		PyObject *result = PyObject_CallObject(py_load_buffer_cb, arglist);
+		} PyObject *result = PyObject_CallObject(py_load_buffer_cb, arglist);
 		if (result && PyList_Check(result)) {
 			PyObject *res = PyList_GetItem(result, 0);
 			rres = PyNumber_AsSsize_t(res, NULL);
 			if (rres)
 				return true;
 		} else {
-			eprintf("Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("Unknown type returned. List was expected.\n");
 		}
 	}
 	return false;
@@ -340,7 +341,7 @@ static bool py_check_buffer(RzBuffer *buf) {
 	const ut8 *buf_data = rz_buf_data(buf, &length);
 
 	if (!buf_data || length == 0) {
-		eprintf("Empty buffer!\n");
+		RZ_LOG_ERROR("Empty buffer!\n");
 	}
 	if (py_check_buffer_cb) {
 		if (!PyCallable_Check(py_check_buffer_cb)) {
@@ -369,7 +370,7 @@ static bool py_check_buffer(RzBuffer *buf) {
 				return true;
 			}
 		} else {
-			eprintf("check_bytes: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("check_bytes: Unknown type returned. List was expected.\n");
 		}
 	}
 	return false;
@@ -388,7 +389,7 @@ static void py_destroy(RzBinFile *arch) {
 		}
 		PyObject *result = PyObject_CallObject(py_destroy_cb, arglist);
 		if (!(result && PyList_Check(result))) {
-			eprintf("destroy: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("destroy: Unknown type returned. List was expected.\n");
 		}
 	}
 }
@@ -414,7 +415,7 @@ static ut64 py_baddr(RzBinFile *arch) {
 				return rres;
 		} else {
 			PyErr_Print();
-			eprintf("baddr: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("baddr: Unknown type returned. List was expected.\n");
 		}
 	}
 	return 0;
@@ -451,7 +452,7 @@ static RzBinAddr *py_binsym(RzBinFile *arch, RzBinSpecialSymbol sym) {
 			ret->type = getI(pybinsym, "type");
 			ret->bits = getI(pybinsym, "bits");
 		} else {
-			eprintf("binsym: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("binsym: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -497,7 +498,7 @@ static RzList *py_entries(RzBinFile *arch) {
 				rz_list_append(ret, entry);
 			}
 		} else {
-			eprintf("entries: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("entries: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -534,7 +535,7 @@ static RzList *py_sections(RzBinFile *arch) {
 				rz_list_append(ret, section);
 			}
 		} else {
-			eprintf("sections: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("sections: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -571,7 +572,7 @@ static RzList *py_imports(RzBinFile *arch) {
 				rz_list_append(ret, import);
 			}
 		} else {
-			eprintf("imports: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("imports: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -608,7 +609,7 @@ static RzList *py_symbols(RzBinFile *arch) {
 				rz_list_append(ret, symbol);
 			}
 		} else {
-			eprintf("symbols: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("symbols: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -645,7 +646,7 @@ static RzList *py_relocs(RzBinFile *arch) {
 				rz_list_append(ret, reloc);
 			}
 		} else {
-			eprintf("relocs: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("relocs: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -685,7 +686,7 @@ static RzBinInfo *py_info(RzBinFile *arch) {
 			ret->big_endian = (int)getI(dict, "big_endian");
 			ret->dbg_info = getI(dict, "dbg_info");
 		} else {
-			eprintf("info: Unknown type returned. List was expected.\n");
+			RZ_LOG_ERROR("info: Unknown type returned. List was expected.\n");
 		}
 	}
 	return ret;
@@ -712,11 +713,11 @@ PyObject *Rizin_plugin_bin(Rizin *self, PyObject *args) {
 	bp->license = getS(o, "license");
 	ptr = getF(o, "load");
 	if (ptr) {
-		eprintf("warning: Plugin %s must implement load_buffer method instead of load.\n", bp->name);
+		RZ_LOG_ERROR("warning: Plugin %s must implement load_buffer method instead of load.\n", bp->name);
 	}
 	ptr = getF(o, "load_buffer");
 	if (getF(o, "load_bytes")) {
-		eprintf("warning: Plugin %s should implement load_buffer method instead of load_bytes.\n", bp->name);
+		RZ_LOG_ERROR("warning: Plugin %s should implement load_buffer method instead of load_bytes.\n", bp->name);
 		if (!ptr) {
 			// fallback
 			ptr = getF(o, "load_bytes");
@@ -735,7 +736,7 @@ PyObject *Rizin_plugin_bin(Rizin *self, PyObject *args) {
 	}
 	ptr = getF(o, "check_buffer");
 	if (getF(o, "check_bytes")) {
-		eprintf("warning: Plugin %s should implement check_buffer method instead of check_bytes.\n", bp->name);
+		RZ_LOG_ERROR("warning: Plugin %s should implement check_buffer method instead of check_bytes.\n", bp->name);
 		if (!ptr) {
 			// fallback
 			ptr = getF(o, "check_bytes");

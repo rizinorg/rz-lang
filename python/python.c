@@ -1,5 +1,5 @@
-/* rizin - LGPL - Copyright 2009-2019 - pancake */
-/* python extension for rizin's rz_lang */
+// SPDX-FileCopyrightText: 2009-2019 pancake <pancake@nopcode.org>
+// SPDX-License-Identifier: LGPL-3.0-only
 
 #include "python/common.h"
 #include "python/core.h"
@@ -7,6 +7,7 @@
 #include "python/asm.h"
 #include "python/analysis.h"
 #include "python/bin.h"
+
 #define PLUGIN_NAME rz_lang_plugin_python
 
 RzCore *core;

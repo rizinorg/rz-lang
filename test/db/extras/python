@@ -1,0 +1,18 @@
+NAME=RzLang Python ASM
+FILE==
+ARGS=-i ../python/examples/test-py-asm.py
+CMDS=<<EOF
+La~MyPyDisasm
+e asm.arch=MyPyDisasm
+wx ffffffffffffff
+pd 4
+EOF
+EXPECT=<<EOF
+ad__  32         MyPyDisasm  GPL     disassembler plugin in python
+            0x00000000      opcode 255
+            0x00000002      opcode 255
+            0x00000004      opcode 255
+            0x00000006      opcode 255
+EOF
+RUN
+
